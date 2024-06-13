@@ -1,0 +1,367 @@
+body {
+    background-color: #010215;
+    color: #ccd6f6;
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+}
+
+.header {
+    text-align: center;
+}
+
+.suggestion-card {
+    position: relative;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: linear-gradient(-180deg, #010215, #1e2037, #ffffff77);
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    color: #fff;
+    max-width: 400px;
+    margin: 20px auto;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    width: 60%;
+}
+
+.suggestion-card h3 {
+    color: #ffcf58;
+}
+
+.suggestion-card h2 {
+    color: #ccd6f6;
+    margin-bottom: 20px;
+}
+
+.suggestion-card .thumbnail-wrapper {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: filter 0.3s ease; /* Smooth transition for the brightness effect */
+}
+
+.suggestion-card .thumbnail-wrapper:hover img {
+    filter: brightness(50%); /* Darken the thumbnail on hover */
+}
+
+.suggestion-card img {
+    position: relative; /* Set position to relative for absolute positioning of play icon */
+}
+
+.suggestion-card .play-icon {
+    position: absolute;
+    color: #fff;
+    font-size: 36px;
+    opacity: 0; /* Initially hidden */
+    transition: opacity 0.3s ease; /* Smooth transition for showing the play icon */
+}
+
+.suggestion-card .thumbnail-wrapper:hover .play-icon {
+    opacity: 1; /* Show play icon on hover */
+}
+
+.honk-header {
+    font-family: "Honk", system-ui;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+    font-size: 75px;
+    font-variation-settings:
+        "MORF" 15,
+        "SHLN" 50;
+}
+
+.roboto-mono {
+    font-family: "Roboto Mono", monospace;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+    color: #ccd6f6;
+    margin-top: -50px;
+}
+
+.ss {
+    font-family: "Roboto Mono", monospace;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+    color: #ccd6f6;
+    margin-top: 50px;
+    margin-bottom: 40px;
+}
+
+.song-name {
+    font-family: "Roboto Mono", monospace;
+    font-weight: 400;
+    font-style: normal;
+    color: #ff865c;
+}
+
+.artist {
+    font-family: "Roboto Mono", monospace;
+    font-weight: 400;
+    font-style: normal;
+    color: #ccd6f6;
+}
+
+.music-link {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #3a7567;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 4px;
+    transition: background-color 0.3s;
+}
+
+.music-link:hover {
+    background-color: #489382;
+}
+
+.toggle-camera-button {
+    color: white;
+    padding: 10px 20px;
+    margin-top: 30px;
+    border: none;
+    border-radius: 4px;
+    font-size: 20px;
+    cursor: pointer;
+    transition: background-color 0.3s, box-shadow 0.3s;
+}
+
+.camera-on {
+    background-color: #dc3545;
+    /* Red for turning off */
+}
+
+.camera-on:hover {
+    background-color: #9a1a26;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.camera-on:active {
+    background-color: #bd2130;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.camera-off {
+    background-color: #374BA8;
+    /* Darker shade of #4158D0 */
+    background-image: linear-gradient(43deg, #374BA8 0%, #B03CA8 46%, #E6B063 100%);
+    /* Darker shades */
+    transition: background-image 0.3s ease, background-color 0.3s ease;
+}
+
+.camera-off:hover {
+    background-color: #2D3E82;
+    /* Even darker shade of #4158D0 */
+    background-image: linear-gradient(43deg, #2D3E82 0%, #8C2E85 46%, #B6894E 100%);
+}
+
+.camera-off:active {
+    background-color: #2D3E82;
+    /* Even darker shade of #4158D0 */
+    background-image: linear-gradient(43deg, #2D3E82 0%, #8C2E85 46%, #B6894E 100%);
+    /* Even darker shades */
+}
+
+.songs-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+}
+
+.song-card {
+    position: relative;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    text-align: center;
+    display: flex;
+    width: 250px;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.song-card h4 {
+    margin-bottom: 10px;
+}
+
+.song-card a {
+    margin-bottom: 10px;
+}
+
+.song-card img {
+    transition: filter 0.3s ease;
+    /* Smooth transition for the brightness effect */
+    position: relative;
+    margin-bottom: 10px;
+}
+
+.song-card .thumbnail-wrapper:hover img {
+    filter: brightness(50%);
+    /* Darken the thumbnail on hover */
+}
+
+.song-card .thumbnail-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.song-card .play-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #fff;
+    font-size: 36px;
+    opacity: 0;
+    /* Initially hidden */
+    transition: opacity 0.3s ease;
+    /* Smooth transition for showing the play icon */
+}
+
+.song-card .thumbnail-wrapper:hover .play-icon {
+    opacity: 1;
+    /* Show play icon on hover */
+}
+
+.loader-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    margin-top: 50px;
+}
+
+.delete-icon {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    color: #ccd6f6;
+    cursor: pointer;
+    font-size: 16px;
+    transition: color 0.3s ease;
+}
+
+.delete-icon:hover {
+    color: #c0392b;
+}
+
+.delete-icon:active {
+    color: #a93226;
+}
+
+.emotion-label {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    color: #fff;
+    padding: 5px 10px;
+    border-top-left-radius: 9px;
+    border-bottom-right-radius: 8px;
+    font-size: 12px;
+    font-weight: bold;
+    background-image: linear-gradient(43deg, #374BA8 0%, #B03CA8 46%, #E6B063 100%);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    /* Add shadow for depth */
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    /* Add transition for hover effect */
+    transform: translateY(-1px) translateX(-1px);
+}
+
+.emotion-label.happy {
+    background-image: linear-gradient(45deg, #4CAF50, #8BC34A);
+    color: #000;
+}
+
+.emotion-label.sad {
+    background-image: linear-gradient(45deg, #2196F3, #673AB7);
+}
+
+.emotion-label.angry {
+    background-image: linear-gradient(45deg, #F44336, #FF5722);
+}
+
+.emotion-label.surprised {
+    background-image: linear-gradient(45deg, #FFC107, #FF9800);
+    color: #000;
+    /* black text for better readability */
+}
+
+.emotion-label.neutral {
+    background-image: linear-gradient(45deg, #9E9E9E, #607D8B);
+}
+
+.emotion-label.fearful {
+    background-image: linear-gradient(45deg, #9C27B0, #E91E63);
+}
+
+.emotion-label.disgusted {
+    background-image: linear-gradient(45deg, #FF4081, #E91E63);
+}
+
+/* Positioning for like icon */
+.like-icon {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    color: #ff0000;
+    /* Heart color */
+    font-size: 20px;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.like-icon:hover {
+    color: #ff6b6b;
+    /* Change color on hover */
+}
+
+.like-icon:active {
+    color: #c0392b;
+    /* Change color on click */
+}
+
+.description {
+    max-width: 1000px;
+    margin: 50px auto;
+    text-align: center;
+    padding: 10px;
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    color: #ccd6f6;
+    background: linear-gradient(-180deg, #010215, #1e2037, #ffffff77);
+  }
+  
+  .description h2 {
+    color:  #ffcf58;
+    margin-top: 20px;
+  }
+  
+  .description ol {
+    list-style-type:upper-roman;
+    padding: 10px;
+    margin-left: 15px;
+  }
+  
+  .description ol li {
+    padding: 10px;
+    text-align: left;
+    color: #ccd6f6;
+  }
+  
+  .description p {
+    color: #e0e0e0;
+    font-size: 18px;
+  }
+  
+  .ds {
+    color: #ffcf58;
+  }

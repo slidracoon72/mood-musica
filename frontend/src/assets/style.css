@@ -1,0 +1,17 @@
+.animated-text {
+    font-size: 36px;
+    font-weight: bold;
+    color: #ffcf58; /* Text color */
+    text-align: center;
+    margin-top: 50px;
+  }
+  
+  @keyframes animateText {
+    0%, 100% {
+      visibility: visible; /* Start and end visibility */
+    }
+    50% {
+      visibility: hidden; /* Middle visibility */
+    }
+  }
+  
