@@ -5,7 +5,7 @@ from flask import Flask, request, jsonify
 app = Flask(__name__)
 
 # Initialize Firebase Admin SDK
-cred = credentials.Certificate('serviceAccountKey.json')
+cred = credentials.Certificate('serviceAccountKey1.json')
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://chat-gpt-4c586-default-rtdb.firebaseio.com/'
 })
