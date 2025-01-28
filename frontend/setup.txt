@@ -1,0 +1,13 @@
+# Navigate to:
+cd mood-musica/frontend
+
+# Run latest version of Node for this project:
+nvm install node       # Installs the latest stable version
+nvm use node           # Switches to the latest version
+
+# Clear and Reinstall Dependencies
+sudo rm -rf node_modules package-lock.json
+sudo npm install
+
+# Run frontend
+sudo npm run dev

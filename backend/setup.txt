@@ -1,0 +1,5 @@
+# Navigate to:
+cd mood-musica/backend/backend
+
+# Run:
+sudo python3 app.py
