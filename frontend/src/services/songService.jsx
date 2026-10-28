@@ -4,26 +4,35 @@ import { onValue, ref, remove, serverTimestamp, update } from 'firebase/database
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
-export const fetchSongRecommendation = async (emotion) => {
-  const response = await fetch(`${API_URL}/api/song?emotion=${encodeURIComponent(emotion)}`);
-  const data = await response.json().catch(() => ({}));
+const SERVER_UNREACHABLE = 'Could not reach the Mood Musica server. Please try again shortly.';
 
+// GETs a JSON endpoint of our API; errors carry a message fit to show the user
+const apiGet = async (path) => {
+  let response;
+  try {
+    response = await fetch(`${API_URL}${path}`);
+  } catch {
+    throw new Error(SERVER_UNREACHABLE);
+  }
+
+  const data = await response.json().catch(() => null);
   if (!response.ok) {
-    throw new Error(data.error || 'Could not fetch a song, please try again');
+    // Our API always answers with JSON; anything else means the request did
+    // not reach it (wrong URL, an outdated server, a proxy error page)
+    if (!data) {
+      console.error(`Unexpected ${response.status} response from ${path}; check VITE_API_URL and that the backend is up to date`);
+    }
+    throw new Error(data?.error || SERVER_UNREACHABLE);
   }
   return data;
 };
 
-// Deezer preview URLs expire after ~15 minutes; this returns a fresh one
-export const fetchPreviewUrl = async (trackId) => {
-  const response = await fetch(`${API_URL}/api/tracks/${encodeURIComponent(trackId)}/preview`);
-  const data = await response.json().catch(() => ({}));
+export const fetchSongRecommendation = (emotion) =>
+  apiGet(`/api/song?emotion=${encodeURIComponent(emotion)}`);
 
-  if (!response.ok) {
-    throw new Error(data.error || 'Could not load the preview');
-  }
-  return data.preview_url;
-};
+// Deezer preview URLs expire after ~15 minutes; this returns a fresh one
+export const fetchPreviewUrl = async (trackId) =>
+  (await apiGet(`/api/tracks/${encodeURIComponent(trackId)}/preview`)).preview_url;
 
 // A YouTube search link for listening to the full song (no API key needed)
 export const youtubeSearchUrl = (song) => {
