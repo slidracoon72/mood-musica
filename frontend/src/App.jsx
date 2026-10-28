@@ -1,20 +1,33 @@
-import { Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
+import { usePlayer } from './services/playerService';
 import Navbar from './components/Navbar';
+import Footer from './components/Footer';
+import Toaster from './components/Toaster';
+import NowPlayingBar from './components/NowPlayingBar';
 import Home from './components/Home';
-import SuggestedSongs from './components/SuggestedSongs';
-import LikedSongs from './components/LikedSongs';
-import Header from './components/Header';
+import Library from './components/Library';
 
 const App = () => {
+  const { song } = usePlayer();
+
   return (
-    <div>
+    <div className={`app ${song ? 'has-player' : ''}`}>
       <Navbar />
-      <Header />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/suggested-songs" element={<SuggestedSongs />} />
-        <Route path="/liked-songs" element={<LikedSongs />} />
-      </Routes>
+      <main className="main container">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          {/* Keys keep each page's filter state separate */}
+          <Route path="/history" element={<Library key="history" />} />
+          <Route path="/favorites" element={<Library key="favorites" favoritesOnly />} />
+          {/* Old URLs */}
+          <Route path="/suggested-songs" element={<Navigate to="/history" replace />} />
+          <Route path="/liked-songs" element={<Navigate to="/favorites" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </main>
+      <Footer />
+      <NowPlayingBar />
+      <Toaster />
     </div>
   );
 };

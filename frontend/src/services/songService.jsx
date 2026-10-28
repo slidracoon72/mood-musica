@@ -4,14 +4,40 @@ import { onValue, ref, remove, serverTimestamp, update } from 'firebase/database
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
-export const fetchSongRecommendation = async (emotion) => {
-  const response = await fetch(`${API_URL}/api/song?emotion=${encodeURIComponent(emotion)}`);
-  const data = await response.json().catch(() => ({}));
+const SERVER_UNREACHABLE = 'Could not reach the Mood Musica server. Please try again shortly.';
 
+// GETs a JSON endpoint of our API; errors carry a message fit to show the user
+const apiGet = async (path) => {
+  let response;
+  try {
+    response = await fetch(`${API_URL}${path}`);
+  } catch {
+    throw new Error(SERVER_UNREACHABLE);
+  }
+
+  const data = await response.json().catch(() => null);
   if (!response.ok) {
-    throw new Error(data.error || 'Could not fetch a song, please try again');
+    // Our API always answers with JSON; anything else means the request did
+    // not reach it (wrong URL, an outdated server, a proxy error page)
+    if (!data) {
+      console.error(`Unexpected ${response.status} response from ${path}; check VITE_API_URL and that the backend is up to date`);
+    }
+    throw new Error(data?.error || SERVER_UNREACHABLE);
   }
   return data;
+};
+
+export const fetchSongRecommendation = (emotion) =>
+  apiGet(`/api/song?emotion=${encodeURIComponent(emotion)}`);
+
+// Deezer preview URLs expire after ~15 minutes; this returns a fresh one
+export const fetchPreviewUrl = async (trackId) =>
+  (await apiGet(`/api/tracks/${encodeURIComponent(trackId)}/preview`)).preview_url;
+
+// A YouTube search link for listening to the full song (no API key needed)
+export const youtubeSearchUrl = (song) => {
+  const query = [song.name, ...(song.artists ?? [])].join(' ');
+  return `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
 };
 
 const songRef = (uid, songId) => ref(database, `users/${uid}/songs/${songId}`);
@@ -22,7 +48,7 @@ const songRef = (uid, songId) => ref(database, `users/${uid}/songs/${songId}`);
 export const saveSuggestedSong = (uid, song) => update(songRef(uid, song.id), {
   name: song.name,
   artists: song.artists,
-  thumbnail_url: song.thumbnail_url ?? null,
+  thumbnail_url: song.thumbnail_url || null,
   track_url: song.track_url,
   emotion: song.emotion,
   timestamp: serverTimestamp(),
@@ -31,6 +57,25 @@ export const saveSuggestedSong = (uid, song) => update(songRef(uid, song.id), {
 export const setSongLiked = (uid, songId, liked) => update(songRef(uid, songId), { liked });
 
 export const deleteSuggestedSong = (uid, songId) => remove(songRef(uid, songId));
+
+// Subscribes to whether one saved song is a favorite (false if not saved)
+export const useSongLiked = (uid, songId) => {
+  // Remember which song the value belongs to, so switching songs never shows a stale heart
+  const [result, setResult] = useState({ path: null, liked: false });
+  const path = uid && songId ? `users/${uid}/songs/${songId}/liked` : null;
+
+  useEffect(() => {
+    if (!path) return undefined;
+
+    return onValue(
+      ref(database, path),
+      (snapshot) => setResult({ path, liked: snapshot.val() === true }),
+      (dbError) => console.error('Failed to load favorite status:', dbError)
+    );
+  }, [path]);
+
+  return result.path === path && result.liked;
+};
 
 // Subscribes to the user's saved songs, newest first
 export const useUserSongs = (uid) => {
