@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { logOut, signIn, useAuthUser } from '../services/authService';
 import { toast } from '../services/toastService';
+import Logo from './Logo';
 
 const Navbar = () => {
     const { user, loading } = useAuthUser();
@@ -22,7 +23,7 @@ const Navbar = () => {
         <header className="navbar">
             <div className="container nav-inner">
                 <Link to="/" className="brand" onClick={closeMenu}>
-                    <span className="brand-mark"><i className="fa-solid fa-wave-square" aria-hidden="true"></i></span>
+                    <Logo />
                     Mood Musica
                 </Link>
 
