@@ -30,7 +30,7 @@ https://drive.google.com/file/d/12LzXyRqfZdRUQ6kCnNsn8qXCqpbc8X36/view?usp=shari
 ```
 cd backend
 python3 -m venv venv
-venv/bin/pip install -r requirements.txt
+venv/bin/pip install -r requirements-dev.txt
 cd backend
 ../venv/bin/python app.py
 ```
@@ -45,6 +45,23 @@ npm install
 npm run dev
 ```
 Open http://localhost:5173.
+
+## Tests
+```
+cd backend && venv/bin/pytest      # API, Deezer client, rate limits (Deezer is faked, no network)
+cd frontend && npm test            # emotion tracker, preview URL expiry, time formatting
+```
+
+## Deploying the backend
+Flask's built-in server is for development only. Run the API with gunicorn:
+```
+cd backend/backend
+../venv/bin/gunicorn -c gunicorn.conf.py wsgi:app
+```
+- **Rate limits:** each client IP gets 20 song and 60 preview requests per minute, and all clients share caps of 100 and 200 per minute so the server stays under Deezer's limit (about 50 requests per 5 seconds per IP). All limits can be changed in `.env`.
+- **Behind a reverse proxy** (nginx, a load balancer): set `TRUSTED_PROXIES=1` so limits apply to the real client IP rather than the proxy.
+- **More than one process:** the defaults run one process with 8 threads, which keeps rate limit counters in memory. To run several processes or servers, point `RATELIMIT_STORAGE_URI` at Redis first.
+- Set `FRONTEND_ORIGINS` to your deployed frontend URL, and keep `FLASK_DEBUG=0`.
 
 ## Security notes
 - Never commit `.env`, `.env.local` or Firebase service-account keys; they are ignored by `.gitignore`.

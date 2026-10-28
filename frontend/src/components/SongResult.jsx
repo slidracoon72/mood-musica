@@ -1,24 +1,23 @@
-import { useState } from 'react';
 import { MOODS } from '../moods';
-import { setSongLiked, youtubeSearchUrl } from '../services/songService';
+import { setSongLiked, useSongLiked, youtubeSearchUrl } from '../services/songService';
 import { signIn } from '../services/authService';
 import { toast } from '../services/toastService';
 import AudioPreview from './AudioPreview';
 
-// The recommended song; render with key={song.id} so state resets per song
+// The recommended song
 const SongResult = ({ song, user, onAnotherSong }) => {
     const mood = MOODS[song.emotion];
-    const [liked, setLiked] = useState(false);
+    // Read from the database, so a song favorited earlier shows a filled heart.
+    // Firebase applies local writes immediately and reverts them if rejected.
+    const liked = useSongLiked(user?.uid, song.id);
 
     const toggleLike = async () => {
         const nextLiked = !liked;
-        setLiked(nextLiked);
         try {
             await setSongLiked(user.uid, song.id, nextLiked);
             toast(nextLiked ? 'Added to favorites' : 'Removed from favorites', 'success');
         } catch (error) {
             console.error('Failed to update favorite:', error);
-            setLiked(!nextLiked);
             toast('Could not update favorites', 'error');
         }
     };

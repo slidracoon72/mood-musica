@@ -3,11 +3,18 @@ cd mood-musica/backend
 
 # Create a virtual environment and install dependencies (first time only):
 python3 -m venv venv
-venv/bin/pip install -r requirements.txt
+venv/bin/pip install -r requirements-dev.txt
 
 # Optional: copy .env.example to backend/.env and adjust settings
 cp .env.example backend/.env
 
-# Run (no sudo needed):
+# Run tests:
+venv/bin/pytest
+
+# Run for development (no sudo needed):
 cd backend
 ../venv/bin/python app.py
+
+# Run in production with gunicorn:
+cd backend
+../venv/bin/gunicorn -c gunicorn.conf.py wsgi:app

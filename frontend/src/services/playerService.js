@@ -1,13 +1,10 @@
 import { useSyncExternalStore } from 'react';
 import { fetchPreviewUrl } from './songService';
 import { toast } from './toastService';
+import { isPreviewUrlFresh } from '../utils/previewUrl';
 
 // One app-wide audio element, so playback continues across pages and only
 // one preview plays at a time
-
-// Refresh preview URLs that expire within this margin
-const EXPIRY_MARGIN_MS = 60 * 1000;
-
 const audio = new Audio();
 audio.preload = 'auto';
 
@@ -25,13 +22,6 @@ audio.addEventListener('ended', () => setState({ playing: false, currentTime: 0 
 audio.addEventListener('timeupdate', () => setState({ currentTime: audio.currentTime }));
 audio.addEventListener('loadedmetadata', () => setState({ duration: audio.duration || 0 }));
 
-// Deezer preview URLs carry their expiry as "exp=<unix seconds>"
-const isFresh = (url) => {
-  if (!url) return false;
-  const match = url.match(/exp=(\d+)/);
-  return !match || Number(match[1]) * 1000 - Date.now() > EXPIRY_MARGIN_MS;
-};
-
 // Plays a song's preview, or toggles it if it is already the current song
 export const playSong = async (song) => {
   if (state.song?.id === song.id) {
@@ -42,7 +32,7 @@ export const playSong = async (song) => {
   audio.pause();
   setState({ song, loading: true, playing: false, currentTime: 0, duration: 0 });
   try {
-    const url = isFresh(song.preview_url) ? song.preview_url : await fetchPreviewUrl(song.id);
+    const url = isPreviewUrlFresh(song.preview_url) ? song.preview_url : await fetchPreviewUrl(song.id);
     if (state.song?.id !== song.id) return; // another song was picked meanwhile
     audio.src = url;
     await audio.play();

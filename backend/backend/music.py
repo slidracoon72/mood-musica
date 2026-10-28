@@ -1,4 +1,5 @@
 import random
+import threading
 import time
 import requests
 from config import DEEZER_API_URL, REQUEST_TIMEOUT
@@ -12,8 +13,15 @@ MAX_PLAYLIST_ATTEMPTS = 3
 PLAYLIST_CACHE_TTL = 60 * 60  # seconds
 _playlist_cache = {}
 
-# Reuse connections to Deezer across requests
-_session = requests.Session()
+# Reuse connections to Deezer across requests; one session per thread since
+# requests.Session is not guaranteed to be thread-safe
+_thread_local = threading.local()
+
+
+def _get_session():
+    if not hasattr(_thread_local, 'session'):
+        _thread_local.session = requests.Session()
+    return _thread_local.session
 
 
 class MusicServiceError(Exception):
@@ -30,7 +38,7 @@ DEEZER_NOT_FOUND = 800
 
 def _deezer_get(path, **params):
     try:
-        response = _session.get(f'{DEEZER_API_URL}/{path}', params=params, timeout=REQUEST_TIMEOUT)
+        response = _get_session().get(f'{DEEZER_API_URL}/{path}', params=params, timeout=REQUEST_TIMEOUT)
         response.raise_for_status()
         data = response.json()
     except (requests.RequestException, ValueError) as e:

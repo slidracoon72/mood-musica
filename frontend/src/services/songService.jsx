@@ -49,6 +49,25 @@ export const setSongLiked = (uid, songId, liked) => update(songRef(uid, songId),
 
 export const deleteSuggestedSong = (uid, songId) => remove(songRef(uid, songId));
 
+// Subscribes to whether one saved song is a favorite (false if not saved)
+export const useSongLiked = (uid, songId) => {
+  // Remember which song the value belongs to, so switching songs never shows a stale heart
+  const [result, setResult] = useState({ path: null, liked: false });
+  const path = uid && songId ? `users/${uid}/songs/${songId}/liked` : null;
+
+  useEffect(() => {
+    if (!path) return undefined;
+
+    return onValue(
+      ref(database, path),
+      (snapshot) => setResult({ path, liked: snapshot.val() === true }),
+      (dbError) => console.error('Failed to load favorite status:', dbError)
+    );
+  }, [path]);
+
+  return result.path === path && result.liked;
+};
+
 // Subscribes to the user's saved songs, newest first
 export const useUserSongs = (uid) => {
   // Remember which user the loaded songs belong to, so switching users shows a loader
