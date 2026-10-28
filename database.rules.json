@@ -1,0 +1,28 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "users": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid",
+        "songs": {
+          "$songId": {
+            ".validate": "$songId.matches(/^[0-9]{1,20}$/) && newData.hasChildren(['name', 'artists', 'track_url', 'emotion', 'timestamp'])",
+            "name": { ".validate": "newData.isString() && newData.val().length <= 300" },
+            "artists": {
+              "$index": { ".validate": "newData.isString() && newData.val().length <= 300" }
+            },
+            "thumbnail_url": { ".validate": "newData.isString() && newData.val().beginsWith('https://')" },
+            "track_url": { ".validate": "newData.isString() && newData.val().beginsWith('https://www.deezer.com/')" },
+            "emotion": { ".validate": "newData.isString() && newData.val().matches(/^(happy|sad|angry|surprised|neutral|fearful|disgusted)$/)" },
+            "liked": { ".validate": "newData.isBoolean()" },
+            "timestamp": { ".validate": "newData.isNumber() && newData.val() <= now" },
+            "$other": { ".validate": false }
+          }
+        },
+        "$other": { ".validate": false }
+      }
+    }
+  }
+}

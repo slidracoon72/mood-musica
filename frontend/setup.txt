@@ -1,13 +1,15 @@
 # Navigate to:
 cd mood-musica/frontend
 
-# Run latest version of Node for this project:
-nvm install node       # Installs the latest stable version
-nvm use node           # Switches to the latest version
+# Use Node 20.19+ (Vite 8 requirement)
+nvm install --lts
+nvm use --lts
 
-# Clear and Reinstall Dependencies
-sudo rm -rf node_modules package-lock.json
-sudo npm install
+# Configure Firebase (first time only): copy and fill in the values
+cp .env.example .env.local
+
+# Install dependencies (no sudo needed)
+npm install
 
 # Run frontend
-sudo npm run dev
+npm run dev

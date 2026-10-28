@@ -1,5 +1,3 @@
-import React from 'react';
-
 const SongSuggestionCard = ({ song }) => (
   <div className="suggestion-card">
     <div className='card-heading'>
@@ -12,7 +10,7 @@ const SongSuggestionCard = ({ song }) => (
       )}
     </h3>
     {song.thumbnail_url && (
-      <a href={song.spotify_url} target="_blank" rel="noopener noreferrer" className="thumbnail-wrapper">
+      <a href={song.track_url} target="_blank" rel="noopener noreferrer" className="thumbnail-wrapper">
         <img src={song.thumbnail_url} alt={song.name} style={{ width: '150px', borderRadius: '10px' }} />
         <i className="fas fa-play play-icon"></i>
       </a>
@@ -27,7 +25,7 @@ const SongSuggestionCard = ({ song }) => (
     ) : (
       <p>No Preview Available</p>
     )}
-    <p>Click the thumbnail to play the full song on Spotify!</p>
+    <p>Click the thumbnail to play the full song on Deezer!</p>
   </div>
 );
 
