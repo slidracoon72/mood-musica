@@ -1,21 +1,20 @@
 import { initializeApp } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
 import { getDatabase } from 'firebase/database';
 
+// Values come from .env.local (see .env.example)
 const firebaseConfig = {
-    apiKey: "AIzaSyA8kGPRE8XhguDUs97QzoVhjVpfnXGMT2U",
-    authDomain: "chat-gpt-4c586.firebaseapp.com",
-    databaseURL: "https://chat-gpt-4c586-default-rtdb.firebaseio.com",
-    projectId: "chat-gpt-4c586",
-    storageBucket: "chat-gpt-4c586.appspot.com",
-    messagingSenderId: "77673082845",
-    appId: "1:77673082845:web:50aa8848899d55600c9034",
-    measurementId: "G-DBB29LJCMR"
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+    databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+    appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Initialize Realtime Database and get a reference to the service
+const auth = getAuth(app);
 const database = getDatabase(app);
 
-export { database };
+export { auth, database };

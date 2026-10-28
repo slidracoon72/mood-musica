@@ -1,55 +1,12 @@
-import React, { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
+import { logOut, signIn, useAuthUser } from '../services/authService';
 import '../Navbar.css';
 
 const Navbar = () => {
-    const [displayName, setDisplayName] = useState('');
-
-    useEffect(() => {
-        // Function to update display name
-        const updateDisplayName = () => {
-            const userInfo = sessionStorage.getItem('user_info');
-            if (userInfo) {
-                const parsedUserInfo = JSON.parse(userInfo);
-                setDisplayName(parsedUserInfo.display_name);
-            } else {
-                setDisplayName('');
-            }
-        };
-
-        // Update display name on component mount
-        updateDisplayName();
-
-        // Add event listener for successful login events
-        window.addEventListener('login', updateDisplayName);
-
-        // Cleanup function to remove event listener
-        return () => {
-            window.removeEventListener('login', updateDisplayName);
-        };
-    }, []);
-
-    const handleLogin = () => {
-        console.log("Login Pressed!");
-        window.location.href = 'http://localhost:5000/login';
-    };
+    const { user, loading } = useAuthUser();
 
     const handleLogout = () => {
-        // Clear local session storage
-        sessionStorage.removeItem('user_info');
-
-        // Make backend call to /logout
-        fetch('/logout')
-            .then(response => {
-                if (response.ok) {
-                    setDisplayName(''); // Clear display name upon logout
-                } else {
-                    console.error('Failed to logout:', response.statusText);
-                }
-            })
-            .catch(error => {
-                console.error('Failed to logout:', error.message);
-            });
+        logOut().catch(error => console.error('Failed to logout:', error));
     };
 
     return (
@@ -58,34 +15,34 @@ const Navbar = () => {
                 <div className="collapse navbar-collapse" id="navbarNav">
                     <ul className="navbar-nav">
                         <li className="nav-item">
-                            <NavLink exact to="/" className="nav-link" activeClassName="active">
+                            <NavLink end to="/" className="nav-link">
                                 Home 🏠
                             </NavLink>
                         </li>
                         <li className="nav-item">
-                            <NavLink to="/suggested-songs" className="nav-link" activeClassName="active">
+                            <NavLink to="/suggested-songs" className="nav-link">
                                 Suggested Songs 💿
                             </NavLink>
                         </li>
                         <li className="nav-item">
-                            <NavLink to="/liked-songs" className="nav-link" activeClassName="active">
+                            <NavLink to="/liked-songs" className="nav-link">
                                 Liked Songs ❤️️
                             </NavLink>
                         </li>
                         <li className="nav-item float-right">
-                            {displayName ? (
+                            {loading ? null : user ? (
                                 <>
                                     <span className="mr-4" style={{ color: '#ccd6f6' }}>
-                                        {displayName}
+                                        {user.displayName}
                                     </span>
-                                    <span className="logout-link" onClick={handleLogout} style={{ cursor: 'pointer' }}>
+                                    <button type="button" className="logout-link nav-button" onClick={handleLogout}>
                                         Logout
-                                    </span>
+                                    </button>
                                 </>
                             ) : (
-                                <NavLink onClick={handleLogin} className="login-link">
+                                <button type="button" className="login-link nav-button" onClick={signIn}>
                                     Login 😀
-                                </NavLink>
+                                </button>
                             )}
                         </li>
                     </ul>
@@ -96,4 +53,3 @@ const Navbar = () => {
 };
 
 export default Navbar;
-

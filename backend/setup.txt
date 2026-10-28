@@ -1,5 +1,13 @@
 # Navigate to:
-cd mood-musica/backend/backend
+cd mood-musica/backend
 
-# Run:
-sudo python3 app.py
+# Create a virtual environment and install dependencies (first time only):
+python3 -m venv venv
+venv/bin/pip install -r requirements.txt
+
+# Optional: copy .env.example to backend/.env and adjust settings
+cp .env.example backend/.env
+
+# Run (no sudo needed):
+cd backend
+../venv/bin/python app.py

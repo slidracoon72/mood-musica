@@ -1,9 +1,8 @@
-import React from 'react';
-
-const ToggleButton = ({ isCameraOn, handleToggleCamera }) => (
+const ToggleButton = ({ isCameraOn, handleToggleCamera, disabled }) => (
   <div>
     <button
       onClick={handleToggleCamera}
+      disabled={disabled}
       className={`toggle-camera-button ${isCameraOn ? 'camera-on' : 'camera-off'}`}
     >
       {isCameraOn ? 'Stop Mood Detection' : 'Start Mood Detection'}

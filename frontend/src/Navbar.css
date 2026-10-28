@@ -61,6 +61,13 @@
     transition: color 0.3s ease;
 }
 
+.nav-button {
+    background: none;
+    border: none;
+    font: inherit;
+    cursor: pointer;
+}
+
 .logout-link:hover {
     color: #ffffff;
     background-color: #993535;
