@@ -1,30 +1,75 @@
-# Mood-Musica
-Welcome to Mood-Musica! This project is a facial emotion detection-based music recommendation system that suggests songs based on your detected mood. It's a full-stack application with a frontend built in React.js, a backend in Python Flask, and Firebase for sign-in and storing your song history.
+<p align="center">
+  <img src="frontend/public/logo.svg" width="88" alt="Mood Musica logo">
+</p>
 
-## Live Demo Link:
-https://drive.google.com/file/d/12LzXyRqfZdRUQ6kCnNsn8qXCqpbc8X36/view?usp=sharing
+<h1 align="center">Mood Musica</h1>
 
-> The demo shows the original Spotify version. Song recommendations now come from the free [Deezer API](https://developers.deezer.com/api), since Spotify's Web API is no longer usable for this kind of app without a Premium subscription.
+<p align="center">
+  <strong>Music that matches your mood.</strong><br>
+  Mood Musica reads your facial expression right in your browser and recommends a song to match how you feel.
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/result.png" alt="A song recommended for a happy mood, with cover art, a preview player and links to Deezer and YouTube">
+</p>
+
+## Features
+
+- **Mood detection on your device:** a face-expression model runs in the browser through TensorFlow.js. Hold an expression for two seconds and Mood Musica locks in one of seven moods. Your video never leaves your device.
+- **No camera? Pick a mood:** choose Happy, Sad, Angry, Surprised, Neutral, Fearful or Disgusted by hand.
+- **Song recommendations:** songs come from playlists curated by Deezer's editors, with a 30-second preview, cover art, and links to the full song on Deezer or YouTube. Ask for another song in the same mood at any time.
+- **History and Favorites:** sign in with Google to keep every suggestion and heart your favorites. Filter by mood and play any saved song from its card.
+- **Built-in player:** a "Now playing" bar keeps the preview going while you browse.
+- **Responsive and accessible:** works on phones and desktops, and every control can be used from the keyboard.
+
+<p align="center">
+  <img src="docs/screenshots/history.png" width="68%" alt="History page with saved songs, mood filters and the now playing bar">
+  &nbsp;
+  <img src="docs/screenshots/mobile.png" width="26%" alt="Mood Musica on a phone">
+</p>
 
 ## How it works
-1. Emotion detection runs entirely in your browser with [face-api](https://github.com/vladmandic/face-api). Webcam images are never uploaded.
-2. Once the same emotion is detected for 2 seconds, the frontend asks the Flask backend for a song. No webcam? Pick a mood by hand instead.
-3. The backend searches Deezer for playlists matching that mood and returns a random track with a 30-second preview.
-4. Listen to the preview, open the full song on Deezer or YouTube, or ask for another song in the same mood.
-5. If you are signed in with Google, songs are saved to your **History**, and hearted songs to **Favorites**.
 
-## Setup
+1. **Detect:** [face-api](https://github.com/vladmandic/face-api) finds your face in the webcam feed and scores seven expressions on every frame.
+2. **Stabilize:** a small tracker averages those scores over time, requires a minimum confidence and ignores blinks. The raw scores often tie (for example 0.47 sad and 0.41 happy), so this keeps the reading from flickering.
+3. **Recommend:** the Flask API searches Deezer for editor-curated playlists matching the mood, skips holiday playlists, and returns a random track that has a preview.
+4. **Save:** when you are signed in, the song is stored under your account in Firebase Realtime Database. Security rules make sure only you can read or change your songs.
+
+## Tech stack
+
+| Part | Built with |
+| --- | --- |
+| Frontend | React 18, Vite, React Router, @vladmandic/face-api (TensorFlow.js), react-webcam |
+| Backend | Python, Flask, Flask-Limiter, gunicorn, requests |
+| Music | [Deezer API](https://developers.deezer.com/api) (no API key needed) |
+| Accounts and data | Firebase Authentication (Google sign-in) and Realtime Database |
+| Tests | pytest, Vitest |
+
+## Project structure
+
+```
+backend/
+  backend/          Flask app: app.py, routes.py, music.py (Deezer client), moods.py, config.py
+  tests/            pytest suite (Deezer is faked, so tests run offline)
+frontend/
+  src/components/   UI: Home, MoodScanner, SongResult, Library, NowPlayingBar, ...
+  src/services/     face detection, songs API, auth, audio player, toasts
+  src/utils/        emotion tracker, time and preview-link helpers (with Vitest tests)
+database.rules.json Firebase security rules
+```
+
+## Getting started
+
+You need Python 3.11+, Node 20.19+ and a free Firebase project.
 
 ### 1. Firebase (one time)
-1. In the [Firebase console](https://console.firebase.google.com/), open your project (or create one) and add a **Web app**.
+1. In the [Firebase console](https://console.firebase.google.com/), create a project and add a **Web app**.
 2. **Authentication > Sign-in method**: enable **Google**.
-3. **Realtime Database**: create a database, then deploy the security rules from this repo:
+3. **Realtime Database**: create a database, then deploy this repo's security rules:
    ```
-   npm install -g firebase-tools
-   firebase login
-   firebase deploy --only database --project <your-project-id>
+   npx firebase-tools login
+   npx firebase-tools deploy --only database --project <your-project-id>
    ```
-   (Or paste the contents of `database.rules.json` into the **Rules** tab.)
 
 ### 2. Backend
 ```
@@ -34,10 +79,9 @@ venv/bin/pip install -r requirements-dev.txt
 cd backend
 ../venv/bin/python app.py
 ```
-The API runs on http://localhost:5001. Settings are optional; see `backend/.env.example`.
+The API runs on http://localhost:5001. Optional settings are listed in `backend/.env.example`.
 
 ### 3. Frontend
-Requires Node 20.19 or newer.
 ```
 cd frontend
 cp .env.example .env.local   # then fill in your Firebase web app config
@@ -47,23 +91,31 @@ npm run dev
 Open http://localhost:5173.
 
 ## Tests
+
 ```
-cd backend && venv/bin/pytest      # API, Deezer client, rate limits (Deezer is faked, no network)
-cd frontend && npm test            # emotion tracker, preview URL expiry, time formatting
+cd backend && venv/bin/pytest    # API, Deezer client, caching, rate limits
+cd frontend && npm test          # emotion tracker, preview link expiry, time formatting
 ```
 
 ## Deploying the backend
-Flask's built-in server is for development only. Run the API with gunicorn:
+
+Flask's built-in server is for development only. In production, run the API with gunicorn:
 ```
 cd backend/backend
 ../venv/bin/gunicorn -c gunicorn.conf.py wsgi:app
 ```
-- **Rate limits:** each client IP gets 20 song and 60 preview requests per minute, and all clients share caps of 100 and 200 per minute so the server stays under Deezer's limit (about 50 requests per 5 seconds per IP). All limits can be changed in `.env`.
-- **Behind a reverse proxy** (nginx, a load balancer): set `TRUSTED_PROXIES=1` so limits apply to the real client IP rather than the proxy.
-- **More than one process:** the defaults run one process with 8 threads, which keeps rate limit counters in memory. To run several processes or servers, point `RATELIMIT_STORAGE_URI` at Redis first.
-- Set `FRONTEND_ORIGINS` to your deployed frontend URL, and keep `FLASK_DEBUG=0`.
+- **Rate limits:** each client IP gets 20 song and 60 preview requests per minute. All clients share caps of 100 and 200 per minute, which keeps the server under Deezer's limit of about 50 requests per 5 seconds. Every limit can be changed in `.env`.
+- **Behind a reverse proxy** (nginx, a load balancer): set `TRUSTED_PROXIES=1` so limits apply to the real client IP.
+- **More than one process:** the default is one process with 8 threads, which keeps rate limit counters in memory. To run several processes, point `RATELIMIT_STORAGE_URI` at Redis first.
+- Set `FRONTEND_ORIGINS` to your deployed frontend URL and keep `FLASK_DEBUG=0`.
 
-## Security notes
-- Never commit `.env`, `.env.local` or Firebase service-account keys; they are ignored by `.gitignore`.
-- The backend holds no secrets. Users can only read and write their own data, enforced by `database.rules.json`.
-- Run the backend with `FLASK_DEBUG=0` (the default) on any machine reachable from a network.
+## Privacy and security
+
+- Face detection runs entirely in the browser; no images or video are uploaded.
+- The backend stores no secrets and no user data. It only talks to Deezer's public API.
+- Firebase rules let each user read and write only their own songs, and they validate every field.
+- Never commit `.env`, `.env.local` or Firebase service-account keys; `.gitignore` excludes them.
+
+## License
+
+[MIT](LICENSE) © 2024 Rahul Trivedi
