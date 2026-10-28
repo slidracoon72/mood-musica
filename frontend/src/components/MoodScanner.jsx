@@ -1,35 +1,45 @@
 import { useEffect, useRef, useState } from 'react';
 import Webcam from 'react-webcam';
-import { detectFace, drawFaceBox, strongestExpression } from '../services/faceApiService';
+import { detectFace, drawFaceBox } from '../services/faceApiService';
+import { createEmotionTracker } from '../utils/emotionTracker';
 import { MOODS } from '../moods';
 import Spinner from './Spinner';
 
 const DETECTION_INTERVAL_MS = 100;
-// How long an emotion must stay the strongest before it is accepted
-const STABLE_EMOTION_MS = 2000;
-const NO_FACE_COLOR = '#ffffff';
+// How long an emotion must stay the leader before it is accepted
+const HOLD_MS = 2000;
+// Suggest alternatives if nothing has locked in by then
+const HINT_AFTER_MS = 8000;
+const UNCERTAIN_COLOR = '#ffffff';
 
 const VIDEO_CONSTRAINTS = { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } };
 
-// Shows the webcam, reads the user's expression and reports it once it has
-// been stable for STABLE_EMOTION_MS
+const INITIAL_STATUS = { faceVisible: false, emotion: null, leaderSince: 0 };
+
+// Shows the webcam, reads the user's expression and reports it once it is stable
 const MoodScanner = ({ onDetected, onCameraError, onCancel }) => {
     const webcamRef = useRef(null);
     const canvasRef = useRef(null);
     const onDetectedRef = useRef(onDetected);
     const [cameraReady, setCameraReady] = useState(false);
-    // Expression currently being read, or null when no face is visible
-    const [liveEmotion, setLiveEmotion] = useState(null);
+    const [status, setStatus] = useState(INITIAL_STATUS);
+    const [showHint, setShowHint] = useState(false);
 
     useEffect(() => {
         onDetectedRef.current = onDetected;
     }, [onDetected]);
 
     useEffect(() => {
+        if (!cameraReady) return undefined;
+        const hintTimer = setTimeout(() => setShowHint(true), HINT_AFTER_MS);
+        return () => clearTimeout(hintTimer);
+    }, [cameraReady]);
+
+    useEffect(() => {
         let cancelled = false;
         let timeoutId;
-        let currentEmotion = null;
-        let emotionStartTime = null;
+        const tracker = createEmotionTracker({ holdMs: HOLD_MS });
+        let lastStatus = INITIAL_STATUS;
 
         // Schedule the next detection only after the current one finishes, so
         // slow detections never overlap and the result is reported exactly once
@@ -42,16 +52,20 @@ const MoodScanner = ({ onDetected, onCameraError, onCancel }) => {
                     const result = await detectFace(video);
                     if (cancelled) return;
 
-                    const detectedEmotion = result ? strongestExpression(result.expressions) : null;
-                    drawFaceBox(canvas, video, result?.detection.box, MOODS[detectedEmotion]?.color ?? NO_FACE_COLOR);
+                    const reading = tracker.update(result?.expressions ?? null, Date.now());
+                    drawFaceBox(canvas, video, result?.detection.box, MOODS[reading.emotion]?.color ?? UNCERTAIN_COLOR);
 
-                    if (detectedEmotion !== currentEmotion) {
-                        currentEmotion = detectedEmotion;
-                        emotionStartTime = Date.now();
-                        setLiveEmotion(detectedEmotion);
-                    } else if (detectedEmotion && Date.now() - emotionStartTime >= STABLE_EMOTION_MS) {
-                        onDetectedRef.current(detectedEmotion);
+                    if (reading.locked) {
+                        onDetectedRef.current(reading.emotion);
                         return;
+                    }
+
+                    // Re-render only when what the user sees changes
+                    if (reading.faceVisible !== lastStatus.faceVisible
+                        || reading.emotion !== lastStatus.emotion
+                        || reading.leaderSince !== lastStatus.leaderSince) {
+                        lastStatus = { faceVisible: reading.faceVisible, emotion: reading.emotion, leaderSince: reading.leaderSince };
+                        setStatus(lastStatus);
                     }
                 } catch (error) {
                     console.error('Emotion detection failed:', error);
@@ -71,7 +85,16 @@ const MoodScanner = ({ onDetected, onCameraError, onCancel }) => {
         };
     }, []);
 
-    const mood = MOODS[liveEmotion];
+    const mood = MOODS[status.emotion];
+
+    let statusContent;
+    if (mood) {
+        statusContent = <><i className={`fa-solid ${mood.icon}`} aria-hidden="true"></i> Reading: {mood.label}</>;
+    } else if (status.faceVisible) {
+        statusContent = <><Spinner label="Reading your expression" /> Reading your expression…</>;
+    } else {
+        statusContent = <><i className="fa-solid fa-expand" aria-hidden="true"></i> Looking for your face…</>;
+    }
 
     return (
         <div className="scanner">
@@ -93,33 +116,25 @@ const MoodScanner = ({ onDetected, onCameraError, onCancel }) => {
                         Starting camera…
                     </div>
                 ) : (
-                    <div className="scanner-status" aria-live="polite">
-                        {mood ? (
-                            <>
-                                <i className={`fa-solid ${mood.icon}`} aria-hidden="true"></i>
-                                Reading: {mood.label}
-                            </>
-                        ) : (
-                            <>
-                                <i className="fa-solid fa-expand" aria-hidden="true"></i>
-                                Looking for your face…
-                            </>
-                        )}
-                    </div>
+                    <div className="scanner-status" aria-live="polite">{statusContent}</div>
                 )}
 
-                {/* Restarts whenever the expression changes */}
+                {/* Restarts whenever a new emotion takes the lead */}
                 {mood && (
                     <div
-                        key={liveEmotion}
+                        key={`${status.emotion}-${status.leaderSince}`}
                         className="scanner-progress"
-                        style={{ animationDuration: `${STABLE_EMOTION_MS}ms` }}
+                        style={{ animationDuration: `${HOLD_MS}ms` }}
                     />
                 )}
             </div>
 
             <div className="scanner-footer">
-                <span>Hold an expression for 2 seconds. Video never leaves your device.</span>
+                <span>
+                    {showHint
+                        ? 'Having trouble? Face the camera in good light with a clear expression, or cancel and pick a mood.'
+                        : 'Hold an expression for 2 seconds. Video never leaves your device.'}
+                </span>
                 <button type="button" className="btn btn-secondary btn-sm" onClick={onCancel}>
                     Cancel
                 </button>

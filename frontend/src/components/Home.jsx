@@ -38,12 +38,20 @@ const ResultSkeleton = () => (
     </div>
 );
 
+// Keeps the last recommendation when navigating away and back (until reload)
+let lastSong = null;
+
 const Home = () => {
     const { user } = useAuthUser();
     const [modelsState, setModelsState] = useState('loading'); // loading | ready | error
     const [scanning, setScanning] = useState(false);
     const [loadingSong, setLoadingSong] = useState(false);
-    const [song, setSong] = useState(null);
+    const [song, setSongState] = useState(lastSong);
+
+    const setSong = useCallback((nextSong) => {
+        lastSong = nextSong;
+        setSongState(nextSong);
+    }, []);
 
     useEffect(() => {
         loadModels()
@@ -72,7 +80,7 @@ const Home = () => {
         } finally {
             setLoadingSong(false);
         }
-    }, [user]);
+    }, [user, setSong]);
 
     const handleCameraError = useCallback(() => {
         setScanning(false);

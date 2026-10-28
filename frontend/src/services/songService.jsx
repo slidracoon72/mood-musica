@@ -14,6 +14,17 @@ export const fetchSongRecommendation = async (emotion) => {
   return data;
 };
 
+// Deezer preview URLs expire after ~15 minutes; this returns a fresh one
+export const fetchPreviewUrl = async (trackId) => {
+  const response = await fetch(`${API_URL}/api/tracks/${encodeURIComponent(trackId)}/preview`);
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(data.error || 'Could not load the preview');
+  }
+  return data.preview_url;
+};
+
 // A YouTube search link for listening to the full song (no API key needed)
 export const youtubeSearchUrl = (song) => {
   const query = [song.name, ...(song.artists ?? [])].join(' ');

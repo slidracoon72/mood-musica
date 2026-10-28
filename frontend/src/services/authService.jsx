@@ -1,20 +1,25 @@
-import { useEffect, useState } from 'react';
+import { useSyncExternalStore } from 'react';
 import { GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
 import { auth } from '../firebase';
 import { toast } from './toastService';
 
-// Returns the signed-in Firebase user (or null) and whether auth is still initializing
-export const useAuthUser = () => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+// One shared auth listener, so components mounted later (e.g. on navigation)
+// get the known user immediately instead of flashing a loading state
+let authState = { user: null, loading: true };
+const listeners = new Set();
 
-  useEffect(() => onAuthStateChanged(auth, (currentUser) => {
-    setUser(currentUser);
-    setLoading(false);
-  }), []);
+onAuthStateChanged(auth, (user) => {
+  authState = { user, loading: false };
+  listeners.forEach((listener) => listener());
+});
 
-  return { user, loading };
+const subscribe = (listener) => {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
 };
+
+// Returns the signed-in Firebase user (or null) and whether auth is still initializing
+export const useAuthUser = () => useSyncExternalStore(subscribe, () => authState);
 
 export const signIn = async () => {
   try {

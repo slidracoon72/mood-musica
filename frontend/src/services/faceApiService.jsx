@@ -20,9 +20,6 @@ export const loadModels = async () => {
 export const detectFace = (video) =>
   faceapi.detectSingleFace(video, detectorOptions).withFaceExpressions();
 
-export const strongestExpression = (expressions) =>
-  Object.entries(expressions).reduce((best, current) => (current[1] > best[1] ? current : best))[0];
-
 // Draws a rounded box around the detected face in the video's pixel space
 export const drawFaceBox = (canvas, video, box, color) => {
   if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {

@@ -42,7 +42,7 @@ const SongResult = ({ song, user, onAnotherSong }) => {
                     <h2 className="result-title">{song.name}</h2>
                     <p className="result-artist">{song.artists.join(', ')}</p>
 
-                    {song.preview_url && <AudioPreview src={song.preview_url} title={song.name} />}
+                    <AudioPreview song={song} />
 
                     <div className="result-actions">
                         <a className="btn btn-secondary" href={song.track_url} target="_blank" rel="noopener noreferrer">

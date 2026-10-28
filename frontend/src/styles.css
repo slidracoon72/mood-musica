@@ -919,11 +919,19 @@ button:disabled {
   transform: translateY(-2px);
 }
 
+.tile.is-current {
+  border-color: color-mix(in srgb, var(--mood, var(--accent)) 55%, transparent);
+}
+
 .tile-cover {
   position: relative;
   display: block;
+  width: 100%;
   aspect-ratio: 1;
   overflow: hidden;
+  padding: 0;
+  border: none;
+  background: var(--surface-hover);
 }
 
 .tile-cover img,
@@ -959,9 +967,107 @@ button:disabled {
 }
 
 .tile-cover:hover .tile-play,
-.tile-cover:focus-visible .tile-play {
+.tile-cover:focus-visible .tile-play,
+.tile.is-current .tile-play {
   opacity: 1;
   transform: none;
+}
+
+/* ===== Now playing bar ===== */
+.now-playing {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 60;
+  border-top: 1px solid color-mix(in srgb, var(--mood, var(--accent)) 35%, var(--border));
+  background: rgba(13, 13, 20, 0.92);
+  backdrop-filter: saturate(160%) blur(16px);
+  -webkit-backdrop-filter: saturate(160%) blur(16px);
+  animation: rise-in 0.25s ease-out;
+}
+
+.now-playing-inner {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  height: 76px;
+}
+
+.now-playing-song {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 280px;
+  min-width: 0;
+}
+
+.now-playing-cover {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  object-fit: cover;
+  font-size: 18px;
+}
+
+.now-playing-text {
+  min-width: 0;
+}
+
+.now-playing-title,
+.now-playing-artist {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.now-playing-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.now-playing-artist {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.now-playing-controls {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+/* Leave room for the fixed bar */
+.has-player .main {
+  padding-bottom: 140px;
+}
+
+.has-player .toaster {
+  bottom: 96px;
+}
+
+@media (max-width: 640px) {
+  .now-playing-inner {
+    gap: 12px;
+    height: 68px;
+  }
+
+  .now-playing-song {
+    flex: 1;
+    width: auto;
+  }
+
+  .now-playing-controls {
+    flex: 0 0 auto;
+  }
+
+  .now-playing-controls .preview-seek,
+  .now-playing-controls .preview-time {
+    display: none;
+  }
 }
 
 .tile-body {

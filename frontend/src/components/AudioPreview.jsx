@@ -1,40 +1,32 @@
-import { useRef, useState } from 'react';
+import { playSong, seek, usePlayer } from '../services/playerService';
 import { formatDuration } from '../utils/time';
-import { toast } from '../services/toastService';
+import Spinner from './Spinner';
 
 // Deezer previews are 30 seconds long
 const PREVIEW_LENGTH = 30;
 
-const AudioPreview = ({ src, title }) => {
-    const audioRef = useRef(null);
-    const [playing, setPlaying] = useState(false);
-    const [currentTime, setCurrentTime] = useState(0);
-    const [duration, setDuration] = useState(PREVIEW_LENGTH);
+// Inline preview controls for one song, driven by the app-wide player
+const AudioPreview = ({ song }) => {
+    const player = usePlayer();
+    const isCurrent = player.song?.id === song.id;
+    const playing = isCurrent && player.playing;
+    const loading = isCurrent && player.loading;
+    const currentTime = isCurrent ? player.currentTime : 0;
+    const duration = (isCurrent && player.duration) || PREVIEW_LENGTH;
 
-    const togglePlayback = () => {
-        const audio = audioRef.current;
-        if (audio.paused) {
-            audio.play().catch(() => toast('Could not play the preview', 'error'));
-        } else {
-            audio.pause();
-        }
-    };
-
-    const handleSeek = (event) => {
-        const time = Number(event.target.value);
-        audioRef.current.currentTime = time;
-        setCurrentTime(time);
-    };
+    let icon = <i className="fa-solid fa-play" aria-hidden="true"></i>;
+    if (loading) icon = <Spinner label="Loading preview" />;
+    else if (playing) icon = <i className="fa-solid fa-pause" aria-hidden="true"></i>;
 
     return (
         <div className="preview">
             <button
                 type="button"
                 className="preview-play"
-                onClick={togglePlayback}
+                onClick={() => playSong(song)}
                 aria-label={playing ? 'Pause preview' : 'Play preview'}
             >
-                <i className={`fa-solid ${playing ? 'fa-pause' : 'fa-play'}`} aria-hidden="true"></i>
+                {icon}
             </button>
             <input
                 type="range"
@@ -43,22 +35,13 @@ const AudioPreview = ({ src, title }) => {
                 max={duration}
                 step="0.1"
                 value={currentTime}
-                onChange={handleSeek}
-                aria-label={`Seek preview of ${title}`}
+                disabled={!isCurrent}
+                onChange={(event) => seek(Number(event.target.value))}
+                aria-label={`Seek preview of ${song.name}`}
             />
             <span className="preview-time">
                 {formatDuration(currentTime)} / {formatDuration(duration)}
             </span>
-            <audio
-                ref={audioRef}
-                src={src}
-                preload="metadata"
-                onPlay={() => setPlaying(true)}
-                onPause={() => setPlaying(false)}
-                onEnded={() => setCurrentTime(0)}
-                onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime)}
-                onLoadedMetadata={(event) => setDuration(event.currentTarget.duration || PREVIEW_LENGTH)}
-            />
         </div>
     );
 };

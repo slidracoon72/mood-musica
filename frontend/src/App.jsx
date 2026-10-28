@@ -1,13 +1,17 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
+import { usePlayer } from './services/playerService';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Toaster from './components/Toaster';
+import NowPlayingBar from './components/NowPlayingBar';
 import Home from './components/Home';
 import Library from './components/Library';
 
 const App = () => {
+  const { song } = usePlayer();
+
   return (
-    <div className="app">
+    <div className={`app ${song ? 'has-player' : ''}`}>
       <Navbar />
       <main className="main container">
         <Routes>
@@ -22,6 +26,7 @@ const App = () => {
         </Routes>
       </main>
       <Footer />
+      <NowPlayingBar />
       <Toaster />
     </div>
   );

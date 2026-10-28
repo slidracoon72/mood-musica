@@ -20,6 +20,14 @@ class MusicServiceError(Exception):
     pass
 
 
+class NotFoundError(MusicServiceError):
+    pass
+
+
+# Deezer's error code for a missing track, playlist, etc.
+DEEZER_NOT_FOUND = 800
+
+
 def _deezer_get(path, **params):
     try:
         response = _session.get(f'{DEEZER_API_URL}/{path}', params=params, timeout=REQUEST_TIMEOUT)
@@ -30,7 +38,9 @@ def _deezer_get(path, **params):
 
     # Deezer reports errors with HTTP 200 and an "error" object
     if 'error' in data:
-        raise MusicServiceError(f"Deezer API error: {data['error'].get('message', 'unknown')}")
+        error = data['error']
+        error_class = NotFoundError if error.get('code') == DEEZER_NOT_FOUND else MusicServiceError
+        raise error_class(f"Deezer API error: {error.get('message', 'unknown')}")
     return data
 
 
@@ -93,3 +103,9 @@ def get_song_for_emotion(emotion):
         'track_url': track['link'],
         'emotion': emotion,
     }
+
+
+# Preview URLs expire after about 15 minutes, so saved songs fetch a fresh one
+def get_preview_url(track_id):
+    track = _deezer_get(f'track/{track_id}')
+    return track.get('preview') if track.get('readable') else None
