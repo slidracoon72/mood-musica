@@ -2,7 +2,7 @@ import random
 import time
 import requests
 from config import DEEZER_API_URL, REQUEST_TIMEOUT
-from moods import mood_queries, suggestion_texts, excluded_playlist_words
+from moods import mood_queries, excluded_playlist_words
 
 # How many matching playlists to try before falling back to a track search
 MAX_PLAYLIST_ATTEMPTS = 3
@@ -88,9 +88,8 @@ def get_song_for_emotion(emotion):
         'id': track['id'],
         'name': track['title'],
         'artists': [track['artist']['name']],
-        'thumbnail_url': track.get('album', {}).get('cover_medium') or None,
+        'thumbnail_url': track.get('album', {}).get('cover_big') or None,
         'preview_url': track['preview'],
         'track_url': track['link'],
-        'suggestion_text': suggestion_texts[emotion],
         'emotion': emotion,
     }

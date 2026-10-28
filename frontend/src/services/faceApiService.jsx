@@ -11,22 +11,32 @@ export const loadModels = async () => {
   const MODEL_URL = '/models';
   await Promise.all([
     faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-    faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
     faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL),
   ]);
 };
 
-// Detects faces with landmarks and expressions; requires loadModels() first
-export const detectFaces = (video) =>
-  faceapi.detectAllFaces(video, detectorOptions).withFaceLandmarks().withFaceExpressions();
+// Detects the most prominent face and its expressions (undefined if no face);
+// requires loadModels() first
+export const detectFace = (video) =>
+  faceapi.detectSingleFace(video, detectorOptions).withFaceExpressions();
 
-export const drawDetections = (canvas, video, detections) => {
-  const displaySize = { width: video.videoWidth, height: video.videoHeight };
-  faceapi.matchDimensions(canvas, displaySize);
+export const strongestExpression = (expressions) =>
+  Object.entries(expressions).reduce((best, current) => (current[1] > best[1] ? current : best))[0];
 
-  const resizedDetections = faceapi.resizeResults(detections, displaySize);
-  canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
-  faceapi.draw.drawDetections(canvas, resizedDetections);
-  faceapi.draw.drawFaceLandmarks(canvas, resizedDetections);
-  faceapi.draw.drawFaceExpressions(canvas, resizedDetections);
+// Draws a rounded box around the detected face in the video's pixel space
+export const drawFaceBox = (canvas, video, box, color) => {
+  if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+  }
+
+  const context = canvas.getContext('2d');
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  if (!box) return;
+
+  context.strokeStyle = color;
+  context.lineWidth = Math.max(3, canvas.width / 160);
+  context.beginPath();
+  context.roundRect(box.x, box.y, box.width, box.height, Math.min(box.width, box.height) * 0.12);
+  context.stroke();
 };

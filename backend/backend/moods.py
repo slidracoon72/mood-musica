@@ -13,13 +13,3 @@ mood_queries = {
 
 # Playlists with these words in the title are seasonal and rarely fit a mood
 excluded_playlist_words = ['christmas', 'xmas', 'noël', 'noel', 'navidad', 'weihnacht', 'halloween']
-
-suggestion_texts = {
-    'happy': "You're looking HAPPY 😀 Keep smiling! Let's play:",
-    'sad': "It seems you're feeling SAD 😞 Here's a comforting song for you.",
-    'angry': "Feeling ANGRY? 😡 Take a deep breath and relax with this music.",
-    'surprised': "You look SURPRISED 😮 Here's an exciting song for you.",
-    'neutral': "You're feeling NEUTRAL 😐 Here's something to keep you balanced.",
-    'fearful': "Feeling FEARFUL 😨 Listen to this calming music.",
-    'disgusted': "You seem DISGUSTED 😒 Let's change your mood with some refreshing music."
-}

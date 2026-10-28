@@ -8,9 +8,10 @@ https://drive.google.com/file/d/12LzXyRqfZdRUQ6kCnNsn8qXCqpbc8X36/view?usp=shari
 
 ## How it works
 1. Emotion detection runs entirely in your browser with [face-api](https://github.com/vladmandic/face-api). Webcam images are never uploaded.
-2. Once the same emotion is detected for 2 seconds, the frontend asks the Flask backend for a song.
+2. Once the same emotion is detected for 2 seconds, the frontend asks the Flask backend for a song. No webcam? Pick a mood by hand instead.
 3. The backend searches Deezer for playlists matching that mood and returns a random track with a 30-second preview.
-4. If you are signed in with Google, the song is saved to your own history in Firebase, where you can like or delete it.
+4. Listen to the preview, open the full song on Deezer or YouTube, or ask for another song in the same mood.
+5. If you are signed in with Google, songs are saved to your **History**, and hearted songs to **Favorites**.
 
 ## Setup
 

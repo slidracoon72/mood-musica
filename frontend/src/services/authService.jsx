@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
 import { auth } from '../firebase';
+import { toast } from './toastService';
 
 // Returns the signed-in Firebase user (or null) and whether auth is still initializing
 export const useAuthUser = () => {
@@ -22,6 +23,7 @@ export const signIn = async () => {
     // Closing the popup is not an error worth reporting
     if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
       console.error('Sign-in failed:', error);
+      toast('Sign-in failed. Please try again.', 'error');
     }
   }
 };
