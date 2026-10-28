@@ -5,7 +5,6 @@ const Camera = ({ webcamRef, onError }) => (
     <Webcam
       audio={false}
       ref={webcamRef}
-      screenshotFormat="image/jpeg"
       width="360"
       height="270"
       onUserMediaError={onError}

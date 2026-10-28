@@ -120,6 +120,39 @@ body {
     background-color: #489382;
 }
 
+.youtube-link {
+    margin-top: 10px;
+    background-color: #c4302b;
+}
+
+.youtube-link:hover {
+    background-color: #e0423c;
+}
+
+/* Small YouTube link at the bottom center of a saved song card */
+.youtube-icon {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #ccd6f6;
+    font-size: 20px;
+    line-height: 1;
+    transition: color 0.3s ease;
+}
+
+.youtube-icon:hover {
+    color: #ff0000;
+}
+
+/* Reset button styles for clickable icons */
+.icon-button {
+    background: none;
+    border: none;
+    padding: 0;
+    line-height: 1;
+}
+
 .toggle-camera-button {
     color: white;
     padding: 10px 20px;
@@ -176,7 +209,7 @@ body {
 
 .song-card {
     position: relative;
-    padding: 10px;
+    padding: 10px 10px 40px;
     border: 1px solid #ddd;
     border-radius: 10px;
     margin-bottom: 10px;

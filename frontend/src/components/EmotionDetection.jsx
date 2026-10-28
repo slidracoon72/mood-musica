@@ -1,5 +1,5 @@
 import { useRef, useEffect } from 'react';
-import * as faceapi from '@vladmandic/face-api';
+import { detectFaces, drawDetections } from '../services/faceApiService';
 
 const DETECTION_INTERVAL_MS = 100;
 // How long an emotion must stay the strongest before it is accepted
@@ -30,19 +30,10 @@ const EmotionDetection = ({ webcamRef, onEmotionDetected }) => {
 
       if (video?.readyState === 4 && canvas) {
         try {
-          const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
-            .withFaceLandmarks()
-            .withFaceExpressions();
+          const detections = await detectFaces(video);
           if (cancelled) return;
 
-          const displaySize = { width: video.videoWidth, height: video.videoHeight };
-          faceapi.matchDimensions(canvas, displaySize);
-
-          const resizedDetections = faceapi.resizeResults(detections, displaySize);
-          canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
-          faceapi.draw.drawDetections(canvas, resizedDetections);
-          faceapi.draw.drawFaceLandmarks(canvas, resizedDetections);
-          faceapi.draw.drawFaceExpressions(canvas, resizedDetections);
+          drawDetections(canvas, video, detections);
 
           if (detections.length > 0) {
             const detectedEmotion = strongestEmotion(detections[0].expressions);

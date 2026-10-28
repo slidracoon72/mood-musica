@@ -14,6 +14,12 @@ export const fetchSongRecommendation = async (emotion) => {
   return data;
 };
 
+// A YouTube search link for listening to the full song (no API key needed)
+export const youtubeSearchUrl = (song) => {
+  const query = [song.name, ...(song.artists ?? [])].join(' ');
+  return `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+};
+
 const songRef = (uid, songId) => ref(database, `users/${uid}/songs/${songId}`);
 
 // Songs are keyed by Deezer track id, so a repeated suggestion updates the
@@ -22,7 +28,7 @@ const songRef = (uid, songId) => ref(database, `users/${uid}/songs/${songId}`);
 export const saveSuggestedSong = (uid, song) => update(songRef(uid, song.id), {
   name: song.name,
   artists: song.artists,
-  thumbnail_url: song.thumbnail_url ?? null,
+  thumbnail_url: song.thumbnail_url || null,
   track_url: song.track_url,
   emotion: song.emotion,
   timestamp: serverTimestamp(),

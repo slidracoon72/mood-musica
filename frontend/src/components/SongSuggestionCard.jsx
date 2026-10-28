@@ -1,3 +1,5 @@
+import { youtubeSearchUrl } from '../services/songService';
+
 const SongSuggestionCard = ({ song }) => (
   <div className="suggestion-card">
     <div className='card-heading'>
@@ -18,14 +20,15 @@ const SongSuggestionCard = ({ song }) => (
     {song.preview_url ? (
       <>
         <p>SONG PREVIEW</p>
-        <audio controls>
-          <source src={song.preview_url} type="audio/mpeg" />
-        </audio>
+        <audio controls src={song.preview_url} />
       </>
     ) : (
       <p>No Preview Available</p>
     )}
     <p>Click the thumbnail to play the full song on Deezer!</p>
+    <a href={youtubeSearchUrl(song)} target="_blank" rel="noopener noreferrer" className="music-link youtube-link">
+      <i className="fa-brands fa-youtube"></i> Listen on YouTube
+    </a>
   </div>
 );
 

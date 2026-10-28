@@ -16,7 +16,7 @@ const LikedSongs = () => {
     if (authLoading || loading) {
         content = <Loader />;
     } else if (!user) {
-        content = <p style={{ color: '#fff' }}>Please <span className="login-link" onClick={signIn} style={{ cursor: 'pointer' }}>login</span> to see your liked songs.</p>;
+        content = <p style={{ color: '#fff' }}>Please <button type="button" className="login-link nav-button" onClick={signIn}>login</button> to see your liked songs.</p>;
     } else if (error) {
         content = <p style={{ color: '#ff865c' }}>{error}</p>;
     } else if (likedSongs.length === 0) {

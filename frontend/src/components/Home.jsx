@@ -63,7 +63,7 @@ const Home = () => {
   return (
     <div>
       <div style={{ textAlign: 'center' }}>
-        <ToggleButton isCameraOn={isCameraOn} handleToggleCamera={handleToggleCamera} disabled={!modelsReady} />
+        <ToggleButton isCameraOn={isCameraOn} handleToggleCamera={handleToggleCamera} disabled={!modelsReady || loading} />
         {!modelsReady && !error && <p style={{ color: '#fff' }}>Loading face detection models...</p>}
         {isCameraOn && (
           <div style={{ position: 'relative', display: 'inline-block', margin: '20px' }}>
