@@ -1,7 +1,7 @@
 import random
 import requests
 from config import DEEZER_API_URL, REQUEST_TIMEOUT
-from moods import mood_queries, suggestion_texts
+from moods import mood_queries, suggestion_texts, excluded_playlist_words
 
 # How many matching playlists to try before falling back to a track search
 MAX_PLAYLIST_ATTEMPTS = 3
@@ -29,8 +29,21 @@ def _playable(tracks):
     return [t for t in tracks if t.get('readable') and t.get('preview')]
 
 
+def _is_editorial(playlist):
+    # Playlists curated by Deezer's staff editors, e.g. "Laeti - Deezer Pop Editor"
+    owner = playlist.get('user', {}).get('name', '').lower()
+    return 'editor' in owner or 'deezer' in owner
+
+
+def _is_seasonal(playlist):
+    title = playlist.get('title', '').lower()
+    return any(word in title for word in excluded_playlist_words)
+
+
 def _pick_track(query):
-    playlists = _deezer_get('search/playlist', q=query, limit=25).get('data', [])
+    playlists = [p for p in _deezer_get('search/playlist', q=query, limit=25).get('data', []) if not _is_seasonal(p)]
+    # Prefer editorial playlists; user playlists often don't match the mood
+    playlists = [p for p in playlists if _is_editorial(p)] or playlists
     random.shuffle(playlists)
 
     for playlist in playlists[:MAX_PLAYLIST_ATTEMPTS]:
