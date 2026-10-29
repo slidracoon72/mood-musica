@@ -134,11 +134,6 @@ const Home = ({ startOver = false }) => {
                                     <><i className="fa-solid fa-camera" aria-hidden="true"></i> {song ? 'Scan again' : 'Scan my mood'}</>
                                 )}
                             </button>
-                            {song && !loadingSong && (
-                                <button type="button" className="btn btn-secondary btn-lg" onClick={handleStartOver}>
-                                    <i className="fa-solid fa-arrow-rotate-left" aria-hidden="true"></i> Start over
-                                </button>
-                            )}
                         </div>
                         {(!compactHero || modelsState === 'error') && <p className="hero-note">
                             {modelsState === 'error'
@@ -165,6 +160,7 @@ const Home = ({ startOver = false }) => {
                     song={song}
                     user={user}
                     onAnotherSong={() => recommendSong(song.emotion)}
+                    onClose={handleStartOver}
                 />
             )}
 

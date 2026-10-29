@@ -698,6 +698,7 @@ button:disabled {
 
 /* ===== Result card ===== */
 .result-card {
+  position: relative;
   display: grid;
   grid-template-columns: 260px 1fr;
   gap: 32px;
@@ -711,6 +712,13 @@ button:disabled {
     var(--surface);
   box-shadow: var(--shadow);
   animation: rise-in 0.35s ease-out;
+}
+
+.result-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 1;
 }
 
 .result-cover {
@@ -801,10 +809,18 @@ button:disabled {
     padding: 20px;
   }
 
+  /* Leave room on both sides for the close button on narrow phones */
   .result-cover,
   .result-card .cover-fallback {
-    max-width: 240px;
+    max-width: min(220px, calc(100% - 96px));
     margin: 0 auto;
+  }
+
+  .result-close {
+    top: 12px;
+    right: 12px;
+    width: 32px;
+    height: 32px;
   }
 }
 

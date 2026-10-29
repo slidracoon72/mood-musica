@@ -5,7 +5,7 @@ import { toast } from '../services/toastService';
 import AudioPreview from './AudioPreview';
 
 // The recommended song
-const SongResult = ({ song, user, onAnotherSong }) => {
+const SongResult = ({ song, user, onAnotherSong, onClose }) => {
     const mood = MOODS[song.emotion];
     // Read from the database, so a song favorited earlier shows a filled heart.
     // Firebase applies local writes immediately and reverts them if rejected.
@@ -25,6 +25,15 @@ const SongResult = ({ song, user, onAnotherSong }) => {
     return (
         <>
             <article className="result-card" style={{ '--mood': mood.color }}>
+                <button
+                    type="button"
+                    className="icon-btn result-close"
+                    onClick={onClose}
+                    aria-label="Close this song and go back to the start"
+                    title="Close"
+                >
+                    <i className="fa-solid fa-xmark" aria-hidden="true"></i>
+                </button>
                 {song.thumbnail_url ? (
                     <img className="result-cover" src={song.thumbnail_url} alt={`${song.name} cover art`} />
                 ) : (
