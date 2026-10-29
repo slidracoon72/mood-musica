@@ -2,9 +2,10 @@
 // in the main bundle; the page renders while it downloads.
 let faceapi = null;
 let detectorOptions = null;
+let loadPromise = null;
+let loaded = false;
 
-// Loads the library and the models used for emotion detection
-export const loadModels = async () => {
+const load = async () => {
   faceapi = await import('@vladmandic/face-api');
   detectorOptions = new faceapi.TinyFaceDetectorOptions();
 
@@ -13,12 +14,29 @@ export const loadModels = async () => {
     faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
     faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL),
   ]);
+  loaded = true;
 };
 
+// Loads the library and the models used for emotion detection. Only loads
+// once; a failed load can be retried.
+export const loadModels = () => {
+  if (!loadPromise) {
+    loadPromise = load().catch((error) => {
+      loadPromise = null;
+      throw error;
+    });
+  }
+  return loadPromise;
+};
+
+export const areModelsLoaded = () => loaded;
+
 // Detects the most prominent face and its expressions (undefined if no face);
-// requires loadModels() first
+// requires loadModels() first. face-api's task objects are thenables whose
+// then() drops errors, so awaiting them directly never settles on failure;
+// run() returns a real promise that rejects properly.
 export const detectFace = (video) =>
-  faceapi.detectSingleFace(video, detectorOptions).withFaceExpressions();
+  faceapi.detectSingleFace(video, detectorOptions).withFaceExpressions().run();
 
 // Draws a rounded box around the detected face in the video's pixel space
 export const drawFaceBox = (canvas, video, box, color) => {

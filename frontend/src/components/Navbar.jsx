@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import { logOut, signIn, useAuthUser } from '../services/authService';
 import { toast } from '../services/toastService';
 import Logo from './Logo';
@@ -8,6 +8,9 @@ const Navbar = () => {
     const { user, loading } = useAuthUser();
     const [menuOpen, setMenuOpen] = useState(false);
     const closeMenu = () => setMenuOpen(false);
+    // The logo always returns to the initial screen; "Discover" does too when
+    // already on it, and otherwise brings back the current song
+    const onHome = useLocation().pathname === '/';
 
     const handleLogout = () => {
         closeMenu();
@@ -22,7 +25,7 @@ const Navbar = () => {
     return (
         <header className="navbar">
             <div className="container nav-inner">
-                <Link to="/" className="brand" onClick={closeMenu}>
+                <Link to="/" state={{ startOver: true }} className="brand" onClick={closeMenu}>
                     <Logo />
                     Mood Musica
                 </Link>
@@ -39,7 +42,7 @@ const Navbar = () => {
                 </button>
 
                 <nav id="primary-navigation" className={`nav-links ${menuOpen ? 'is-open' : ''}`} aria-label="Main">
-                    <NavLink end to="/" className="nav-link" onClick={closeMenu}>Discover</NavLink>
+                    <NavLink end to="/" state={onHome ? { startOver: true } : undefined} className="nav-link" onClick={closeMenu}>Discover</NavLink>
                     <NavLink to="/history" className="nav-link" onClick={closeMenu}>History</NavLink>
                     <NavLink to="/favorites" className="nav-link" onClick={closeMenu}>Favorites</NavLink>
 

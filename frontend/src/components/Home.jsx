@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { loadModels } from '../services/faceApiService';
+import { areModelsLoaded, loadModels } from '../services/faceApiService';
 import { fetchSongRecommendation, saveSuggestedSong } from '../services/songService';
 import { useAuthUser } from '../services/authService';
 import { toast } from '../services/toastService';
@@ -41,17 +41,22 @@ const ResultSkeleton = () => (
 // Keeps the last recommendation when navigating away and back (until reload)
 let lastSong = null;
 
-const Home = () => {
+// `startOver` shows the initial screen instead of restoring the last song
+const Home = ({ startOver = false }) => {
     const { user } = useAuthUser();
-    const [modelsState, setModelsState] = useState('loading'); // loading | ready | error
+    const [modelsState, setModelsState] = useState(() => (areModelsLoaded() ? 'ready' : 'loading')); // loading | ready | error
     const [scanning, setScanning] = useState(false);
     const [loadingSong, setLoadingSong] = useState(false);
-    const [song, setSongState] = useState(lastSong);
+    const [song, setSongState] = useState(() => (startOver ? null : lastSong));
 
     const setSong = useCallback((nextSong) => {
         lastSong = nextSong;
         setSongState(nextSong);
     }, []);
+
+    useEffect(() => {
+        if (startOver) lastSong = null;
+    }, [startOver]);
 
     useEffect(() => {
         loadModels()
@@ -94,6 +99,11 @@ const Home = () => {
         setScanning(true);
     };
 
+    const handleStartOver = () => {
+        setSong(null);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
     return (
         <>
             <section className={`hero ${compactHero ? 'hero-compact' : ''}`}>
@@ -124,6 +134,11 @@ const Home = () => {
                                     <><i className="fa-solid fa-camera" aria-hidden="true"></i> {song ? 'Scan again' : 'Scan my mood'}</>
                                 )}
                             </button>
+                            {song && !loadingSong && (
+                                <button type="button" className="btn btn-secondary btn-lg" onClick={handleStartOver}>
+                                    <i className="fa-solid fa-arrow-rotate-left" aria-hidden="true"></i> Start over
+                                </button>
+                            )}
                         </div>
                         {(!compactHero || modelsState === 'error') && <p className="hero-note">
                             {modelsState === 'error'

@@ -47,7 +47,7 @@ const MoodScanner = ({ onDetected, onCameraError, onCancel }) => {
             const video = webcamRef.current?.video;
             const canvas = canvasRef.current;
 
-            if (video?.readyState === 4 && canvas) {
+            if (video?.readyState === 4 && video.videoWidth > 0 && canvas) {
                 try {
                     const result = await detectFace(video);
                     if (cancelled) return;
@@ -68,6 +68,9 @@ const MoodScanner = ({ onDetected, onCameraError, onCancel }) => {
                         setStatus(lastStatus);
                     }
                 } catch (error) {
+                    // A detection still running when the scanner closes fails
+                    // on the stopped video; that is expected, not an error
+                    if (cancelled) return;
                     console.error('Emotion detection failed:', error);
                 }
             }
