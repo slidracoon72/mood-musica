@@ -29,7 +29,7 @@ const SongTile = ({ song, onToggleLike, onDelete }) => {
                 ) : (
                     <div className="cover-fallback"><i className="fa-solid fa-music" aria-hidden="true"></i></div>
                 )}
-                <span className="tile-play">{playIcon}</span>
+                <span className="tile-play glass glass-clear">{playIcon}</span>
             </button>
 
             <div className="tile-body">

@@ -3,6 +3,7 @@ import { areModelsLoaded, loadModels } from '../services/faceApiService';
 import { fetchSongRecommendation, saveSuggestedSong } from '../services/songService';
 import { useAuthUser } from '../services/authService';
 import { toast } from '../services/toastService';
+import { setAmbientMood } from '../utils/glassEffects';
 import MoodScanner from './MoodScanner';
 import MoodPicker from './MoodPicker';
 import SongResult from './SongResult';
@@ -11,17 +12,17 @@ import Spinner from './Spinner';
 const STEPS = [
     {
         icon: 'fa-camera',
-        title: 'Scan your expression',
+        title: 'Scan Your Expression',
         text: 'Turn on your camera and hold an expression for two seconds. No camera? Just pick a mood.',
     },
     {
         icon: 'fa-brain',
-        title: 'We read your mood',
+        title: 'We Read Your Mood',
         text: 'An on-device model recognizes seven emotions. Your video never leaves your browser.',
     },
     {
         icon: 'fa-headphones',
-        title: 'Hear a matching song',
+        title: 'Hear a Matching Song',
         text: 'Get a song from curated Deezer playlists with a 30-second preview. Sign in to keep a history.',
     },
 ];
@@ -58,6 +59,13 @@ const Home = ({ startOver = false }) => {
         if (startOver) lastSong = null;
     }, [startOver]);
 
+    // The background takes on the colour of the recommended song's mood
+    useEffect(() => {
+        setAmbientMood(song?.emotion ?? null);
+    }, [song]);
+
+    useEffect(() => () => setAmbientMood(null), []);
+
     useEffect(() => {
         loadModels()
             .then(() => setModelsState('ready'))
@@ -87,10 +95,16 @@ const Home = ({ startOver = false }) => {
         }
     }, [user, setSong]);
 
-    const handleCameraError = useCallback(() => {
+    // Leaving the scanner without a result drops the live mood tint
+    const stopScanning = useCallback(() => {
         setScanning(false);
-        toast('Could not access your camera. Allow camera access, or pick a mood instead.', 'error');
+        setAmbientMood(null);
     }, []);
+
+    const handleCameraError = useCallback(() => {
+        stopScanning();
+        toast('Could not access your camera. Allow camera access, or pick a mood instead.', 'error');
+    }, [stopScanning]);
 
     const compactHero = scanning || loadingSong || Boolean(song);
 
@@ -148,7 +162,7 @@ const Home = ({ startOver = false }) => {
                 <MoodScanner
                     onDetected={recommendSong}
                     onCameraError={handleCameraError}
-                    onCancel={() => setScanning(false)}
+                    onCancel={stopScanning}
                 />
             )}
 
@@ -167,7 +181,7 @@ const Home = ({ startOver = false }) => {
             {!scanning && (
                 <section className="section" aria-labelledby="mood-picker-title">
                     <div className="section-header">
-                        <h2 id="mood-picker-title" className="section-title">{song ? 'Try another mood' : 'Or pick a mood'}</h2>
+                        <h2 id="mood-picker-title" className="section-title">{song ? 'Try Another Mood' : 'Or Pick a Mood'}</h2>
                         <p className="section-subtitle">No camera needed. Choose how you feel and we will find a song.</p>
                     </div>
                     <MoodPicker activeMood={song?.emotion} onPick={recommendSong} disabled={loadingSong} />
@@ -177,7 +191,7 @@ const Home = ({ startOver = false }) => {
             {!scanning && !song && !loadingSong && (
                 <section className="section" aria-labelledby="how-it-works-title">
                     <div className="section-header">
-                        <h2 id="how-it-works-title" className="section-title">How it works</h2>
+                        <h2 id="how-it-works-title" className="section-title">How It Works</h2>
                     </div>
                     <div className="steps">
                         {STEPS.map(step => (

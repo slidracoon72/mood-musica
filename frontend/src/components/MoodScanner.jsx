@@ -3,6 +3,7 @@ import Webcam from 'react-webcam';
 import { detectFace, drawFaceBox } from '../services/faceApiService';
 import { createEmotionTracker } from '../utils/emotionTracker';
 import { MOODS } from '../moods';
+import { setAmbientMood } from '../utils/glassEffects';
 import Spinner from './Spinner';
 
 const DETECTION_INTERVAL_MS = 100;
@@ -28,6 +29,11 @@ const MoodScanner = ({ onDetected, onCameraError, onCancel }) => {
     useEffect(() => {
         onDetectedRef.current = onDetected;
     }, [onDetected]);
+
+    // While scanning, the background follows the expression being read
+    useEffect(() => {
+        setAmbientMood(status.emotion);
+    }, [status.emotion]);
 
     useEffect(() => {
         if (!cameraReady) return undefined;
@@ -119,7 +125,7 @@ const MoodScanner = ({ onDetected, onCameraError, onCancel }) => {
                         Starting camera…
                     </div>
                 ) : (
-                    <div className="scanner-status" aria-live="polite">{statusContent}</div>
+                    <div className="scanner-status glass glass-clear" aria-live="polite">{statusContent}</div>
                 )}
 
                 {/* Restarts whenever a new emotion takes the lead */}

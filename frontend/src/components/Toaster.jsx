@@ -22,7 +22,7 @@ const Toaster = () => {
     return (
         <div className="toaster" role="status" aria-live="polite">
             {toasts.map(entry => (
-                <div key={entry.id} className={`toast toast-${entry.type}`}>
+                <div key={entry.id} className={`toast glass glass-large toast-${entry.type}`}>
                     <i className={`fa-solid ${ICONS[entry.type] ?? ICONS.info}`} aria-hidden="true"></i>
                     <span>{entry.message}</span>
                 </div>

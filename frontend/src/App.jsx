@@ -18,6 +18,7 @@ const App = () => {
 
   return (
     <div className={`app ${song ? 'has-player' : ''}`}>
+      <div className="scroll-edge" aria-hidden="true" />
       <Navbar />
       <main className="main container">
         <Routes>

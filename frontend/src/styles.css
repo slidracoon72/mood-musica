@@ -1,33 +1,73 @@
+/*
+ * Mood Musica: a web adaptation of Apple's Liquid Glass design language.
+ *
+ * Two layers, following Apple's guidance:
+ * - Functional layer (navigation and controls) uses Liquid Glass: floating,
+ *   translucent, lit from above, with no colour of its own.
+ * - Content layer (songs, cards, panels) uses calmer "standard materials"
+ *   and carries the colour, which then shows through the glass.
+ * Glass is used sparingly, never stacked on glass, and only the primary
+ * action is tinted.
+ */
+
 /* ===== Design tokens ===== */
+
+/* Registered so mood colour changes can animate smoothly */
+@property --ambient {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #8b5cf6;
+}
+
 :root {
   color-scheme: dark;
 
-  --bg: #09090f;
-  --surface: rgba(255, 255, 255, 0.04);
-  --surface-hover: rgba(255, 255, 255, 0.07);
-  --surface-solid: #13131c;
-  --border: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.16);
+  --bg: #07070c;
+  --ambient: #8b5cf6;
 
-  --text: #f4f4f7;
-  --text-muted: #a3a3b8;
-  --text-subtle: #6f6f86;
+  /* Content layer (standard materials) */
+  --material: rgba(255, 255, 255, 0.045);
+  --material-hover: rgba(255, 255, 255, 0.075);
+  --material-border: rgba(255, 255, 255, 0.08);
+  --fill: rgba(255, 255, 255, 0.08);
+  --fill-strong: rgba(255, 255, 255, 0.14);
 
-  --accent: #8b5cf6;
-  --accent-strong: #7c3aed;
+  /* Labels (vibrant text levels) */
+  --text: #f5f5f7;
+  --text-secondary: rgba(235, 235, 245, 0.68);
+  --text-tertiary: rgba(235, 235, 245, 0.42);
+
+  --accent: #7c3aed;
   --gradient: linear-gradient(135deg, #8b5cf6 0%, #ec4899 55%, #f59e0b 100%);
-  --danger: #f87171;
+  --danger: #ff6b6b;
   --success: #4ade80;
-  --youtube: #ff0033;
+  --youtube: #ff3b5c;
 
-  --radius-sm: 10px;
-  --radius: 16px;
+  /* Liquid Glass */
+  --glass-fill: rgba(255, 255, 255, 0.07);
+  --glass-blur: 18px;
+  --glass-saturate: 190%;
+  --glass-edge: rgba(255, 255, 255, 0.5);
+  --glass-shadow: 0 12px 32px rgba(0, 0, 0, 0.32), 0 2px 8px rgba(0, 0, 0, 0.22);
+  --glass-tint: linear-gradient(135deg, rgba(139, 92, 246, 0.78), rgba(79, 70, 229, 0.7) 55%, rgba(37, 99, 235, 0.72));
+
+  /* Gel-like motion: a quick press, a springy release */
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Concentric corner radii */
+  --radius-xl: 36px;
   --radius-lg: 24px;
-  --shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
-  --ring: 0 0 0 3px rgba(139, 92, 246, 0.45);
+  --radius: 18px;
+  --radius-sm: 12px;
 
   --container: 1120px;
-  --nav-height: 68px;
+  --nav-height: 64px;
+  --nav-offset: 12px;
+  --ring: 0 0 0 3px rgba(167, 139, 250, 0.6);
+
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', system-ui, 'Segoe UI', sans-serif;
+  transition: --ambient 1.2s var(--ease-out);
 }
 
 /* ===== Base ===== */
@@ -42,15 +82,16 @@ body {
   margin: 0;
 }
 
+/* The content layer carries the colour: a soft ambient light tinted by the current mood */
 body {
   min-height: 100vh;
   background:
-    radial-gradient(900px 500px at 15% -10%, rgba(139, 92, 246, 0.18), transparent 60%),
-    radial-gradient(800px 500px at 100% 0%, rgba(236, 72, 153, 0.12), transparent 60%),
+    radial-gradient(1000px 640px at 12% -12%, color-mix(in srgb, var(--ambient) 34%, transparent), transparent 62%),
+    radial-gradient(900px 620px at 100% 6%, color-mix(in srgb, var(--ambient) 20%, transparent), transparent 60%),
+    radial-gradient(800px 600px at 50% 115%, rgba(236, 72, 153, 0.12), transparent 62%),
     var(--bg);
   background-attachment: fixed;
   color: var(--text);
-  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   font-size: 16px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -61,6 +102,12 @@ h2,
 h3,
 p {
   margin: 0;
+}
+
+h1,
+h2,
+.brand {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', system-ui, sans-serif;
 }
 
 a {
@@ -103,7 +150,7 @@ button:disabled {
 
 .main {
   flex: 1;
-  padding-top: 40px;
+  padding-top: calc(var(--nav-height) + var(--nav-offset) + 36px);
   padding-bottom: 80px;
 }
 
@@ -114,13 +161,128 @@ button:disabled {
   color: transparent;
 }
 
-.visually-hidden {
+/* ===== Liquid Glass ===== */
+
+/*
+ * The glass recipe. Lensing is approximated with backdrop blur, saturation
+ * and brightness; the edges catch light from above (specular rim), and an
+ * inner highlight gives the material thickness.
+ */
+.glass,
+.btn-primary,
+.btn-secondary,
+.mood-option,
+.nav-toggle {
+  position: relative;
+  isolation: isolate;
+  background: var(--glass-fill);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate)) brightness(1.06);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate)) brightness(1.06);
+  border: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.07),
+    inset 0 14px 24px -18px rgba(255, 255, 255, 0.35),
+    var(--glass-shadow);
+}
+
+/* Specular rim: light from the top-left catching the glass edge */
+.glass::before,
+.btn-primary::before,
+.btn-secondary::before,
+.mood-option::before,
+.nav-toggle::before {
+  content: '';
   position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
+  inset: 0;
+  z-index: -1;
+  padding: 1px;
+  border-radius: inherit;
+  background: linear-gradient(140deg, var(--glass-edge), rgba(255, 255, 255, 0.06) 32%, rgba(255, 255, 255, 0) 55%, rgba(255, 255, 255, 0.18));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  pointer-events: none;
+}
+
+/* Interactive glass illuminates from the pointer, like a fingertip on glass */
+.glass-interactive::after,
+.btn-primary::after,
+.btn-secondary::after,
+.mood-option::after,
+.nav-toggle::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: radial-gradient(120px circle at var(--glow-x, 50%) var(--glow-y, 50%), rgba(255, 255, 255, 0.28), transparent 70%);
+  opacity: 0;
+  transition: opacity 0.35s var(--ease-out);
+  pointer-events: none;
+}
+
+.glass-interactive:hover::after,
+.btn-primary:hover:not(:disabled)::after,
+.btn-secondary:hover:not(:disabled)::after,
+.mood-option:hover:not(:disabled)::after,
+.nav-toggle:hover::after {
+  opacity: 0.55;
+}
+
+.glass-interactive:active::after,
+.btn-primary:active:not(:disabled)::after,
+.btn-secondary:active:not(:disabled)::after,
+.mood-option:active:not(:disabled)::after,
+.nav-toggle:active::after {
+  opacity: 1;
+  transition-duration: 0.08s;
+}
+
+/* Gel-like flex: squeeze on press, spring back on release */
+.glass-interactive,
+.btn,
+.mood-option,
+.nav-toggle,
+.icon-btn {
+  transition: transform 0.5s var(--spring), background-color 0.25s, color 0.25s, box-shadow 0.25s, opacity 0.25s;
+}
+
+.glass-interactive:active,
+.btn:active:not(:disabled),
+.mood-option:active:not(:disabled),
+.nav-toggle:active,
+.icon-btn:active {
+  transform: scale(0.94);
+  transition-duration: 0.12s;
+}
+
+/* Larger glass is more opaque, so text on it stays legible */
+.glass-large {
+  --glass-fill: rgba(22, 22, 32, 0.52);
+  --glass-blur: 28px;
+}
+
+/* Clear glass: only over media (webcam, cover art), with a dimming layer */
+.glass-clear {
+  --glass-fill: rgba(0, 0, 0, 0.32);
+  --glass-blur: 8px;
+  --glass-saturate: 150%;
+}
+
+/* Glass "materializes" by focusing light instead of simply fading */
+@keyframes materialize {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+    filter: blur(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
 }
 
 /* ===== Buttons ===== */
@@ -131,26 +293,20 @@ button:disabled {
   gap: 8px;
   height: 44px;
   padding: 0 20px;
-  border: 1px solid transparent;
   border-radius: 999px;
   font-size: 15px;
   font-weight: 600;
   white-space: nowrap;
-  transition: background-color 0.2s, border-color 0.2s, transform 0.15s, opacity 0.2s, filter 0.2s, box-shadow 0.2s;
-}
-
-.btn:active:not(:disabled) {
-  transform: scale(0.97);
 }
 
 .btn:disabled {
-  opacity: 0.55;
+  opacity: 0.5;
 }
 
 .btn-lg {
-  height: 52px;
-  padding: 0 28px;
-  font-size: 16px;
+  height: 54px;
+  padding: 0 30px;
+  font-size: 17px;
 }
 
 .btn-sm {
@@ -159,71 +315,64 @@ button:disabled {
   font-size: 14px;
 }
 
-/* Violet to blue, so primary actions stand apart from the brand gradient */
+/* The one tinted action: coloured glass, still translucent */
 .btn-primary {
-  background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 55%, #2563eb 100%);
+  background: var(--glass-tint);
   color: #fff;
-  box-shadow: 0 8px 24px rgba(79, 70, 229, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.18);
-}
-
-.btn-primary:hover:not(:disabled) {
-  filter: brightness(1.12);
-  box-shadow: 0 10px 30px rgba(79, 70, 229, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.12),
+    inset 0 16px 24px -16px rgba(255, 255, 255, 0.45),
+    0 12px 32px rgba(91, 70, 229, 0.42),
+    0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
 .btn-secondary {
-  background: var(--surface);
-  border-color: var(--border-strong);
+  color: var(--text);
 }
 
-.btn-secondary:hover:not(:disabled) {
-  background: var(--surface-hover);
-}
-
+/* Low-emphasis text button inside glass (no glass of its own) */
 .btn-ghost {
   background: transparent;
-  border-color: transparent;
-  color: var(--text-muted);
+  border: none;
+  color: var(--text-secondary);
 }
 
 .btn-ghost:hover:not(:disabled) {
   color: var(--text);
-  background: var(--surface);
+  background: var(--fill);
 }
 
-.btn-youtube {
-  background: rgba(255, 0, 51, 0.12);
-  border-color: rgba(255, 0, 51, 0.35);
-  color: #ff5c7a;
+.btn-youtube i {
+  color: var(--youtube);
 }
 
-.btn-youtube:hover {
-  background: rgba(255, 0, 51, 0.2);
-}
-
+/* Icon buttons in the content layer use plain fills, not glass */
 .icon-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 36px;
   height: 36px;
-  border: 1px solid var(--border);
+  border: none;
   border-radius: 50%;
-  background: var(--surface);
-  color: var(--text-muted);
+  background: var(--fill);
+  color: var(--text-secondary);
   font-size: 15px;
-  transition: color 0.2s, background-color 0.2s, border-color 0.2s;
 }
 
 .icon-btn:hover {
   color: var(--text);
-  background: var(--surface-hover);
+  background: var(--fill-strong);
+}
+
+.icon-btn.glass {
+  background: var(--glass-fill);
+  color: var(--text);
 }
 
 .icon-btn.is-liked {
-  color: #f43f5e;
-  border-color: rgba(244, 63, 94, 0.4);
-  background: rgba(244, 63, 94, 0.12);
+  color: #ff375f;
 }
 
 .icon-btn-youtube:hover {
@@ -232,17 +381,28 @@ button:disabled {
 
 .icon-btn-danger:hover {
   color: var(--danger);
-  border-color: rgba(248, 113, 113, 0.4);
 }
 
-/* ===== Mood chips ===== */
+.link-button {
+  padding: 0;
+  border: none;
+  background: none;
+  color: #c4b5fd;
+  font-weight: 600;
+}
+
+.link-button:hover {
+  text-decoration: underline;
+}
+
+/* ===== Mood chips and options ===== */
 .mood-chip {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 10px;
+  padding: 4px 11px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--mood, var(--accent)) 16%, transparent);
+  background: color-mix(in srgb, var(--mood, var(--accent)) 18%, transparent);
   color: var(--mood, var(--accent));
   font-size: 13px;
   font-weight: 600;
@@ -257,14 +417,11 @@ button:disabled {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  height: 42px;
-  padding: 0 16px;
-  border: 1px solid var(--border);
+  height: 44px;
+  padding: 0 18px;
   border-radius: 999px;
-  background: var(--surface);
   font-size: 15px;
   font-weight: 500;
-  transition: border-color 0.2s, background-color 0.2s, transform 0.15s;
 }
 
 .mood-option i {
@@ -272,23 +429,19 @@ button:disabled {
   font-size: 18px;
 }
 
-.mood-option:hover:not(:disabled) {
-  border-color: color-mix(in srgb, var(--mood) 60%, transparent);
-  background: color-mix(in srgb, var(--mood) 10%, transparent);
-}
-
-.mood-option.is-active {
-  border-color: var(--mood);
-  background: color-mix(in srgb, var(--mood) 16%, transparent);
-}
-
 .mood-option:disabled {
   opacity: 0.5;
 }
 
+/* Selected mood: tinted glass in the mood's colour */
+.mood-option.is-active {
+  --glass-fill: color-mix(in srgb, var(--mood) 30%, rgba(255, 255, 255, 0.05));
+  --glass-edge: color-mix(in srgb, var(--mood) 70%, white);
+}
+
 .mood-option-sm {
   height: 34px;
-  padding: 0 12px;
+  padding: 0 13px;
   font-size: 13px;
 }
 
@@ -296,79 +449,90 @@ button:disabled {
   font-size: 14px;
 }
 
-/* ===== Navbar ===== */
+/* ===== Navigation (floating glass capsule) ===== */
 .navbar {
-  position: sticky;
-  top: 0;
+  position: fixed;
+  top: var(--nav-offset);
+  left: 0;
+  right: 0;
   z-index: 50;
-  height: var(--nav-height);
-  border-bottom: 1px solid var(--border);
-  background: rgba(9, 9, 15, 0.72);
-  backdrop-filter: saturate(160%) blur(16px);
-  -webkit-backdrop-filter: saturate(160%) blur(16px);
+  pointer-events: none;
 }
 
-.nav-inner {
+.nav-capsule {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  height: 100%;
-  gap: 24px;
+  gap: 16px;
+  height: var(--nav-height);
+  padding: 0 10px 0 14px;
+  border-radius: 999px;
+  pointer-events: auto;
 }
 
 .brand {
   display: inline-flex;
+  flex-shrink: 0;
   align-items: center;
   gap: 10px;
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 700;
   letter-spacing: -0.01em;
 }
 
-.logo {
-  flex-shrink: 0;
-  border-radius: 10px;
-  box-shadow: 0 4px 14px rgba(236, 72, 153, 0.3);
-}
-
-.nav-links {
+.nav-tabs {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 4px;
-  flex: 1;
+  gap: 2px;
+  margin: 0 auto;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+/* The selection pill slides between tabs (positioned from JS) */
+.nav-indicator {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 0;
+  width: var(--indicator-width, 0);
+  border-radius: 999px;
+  background: var(--fill-strong);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  transform: translateX(var(--indicator-x, 0));
+  transition: transform 0.55s var(--spring), width 0.55s var(--spring);
 }
 
 .nav-link {
-  padding: 8px 14px;
+  position: relative;
+  z-index: 1;
+  padding: 8px 16px;
   border-radius: 999px;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   font-size: 15px;
   font-weight: 500;
-  transition: color 0.2s, background-color 0.2s;
+  transition: color 0.25s;
 }
 
-.nav-link:hover {
-  color: var(--text);
-}
-
+.nav-link:hover,
 .nav-link.active {
   color: var(--text);
-  background: var(--surface-hover);
 }
 
 .nav-auth {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
-  gap: 10px;
-  margin-left: auto;
+  gap: 8px;
 }
 
 .avatar {
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
-  border: 1px solid var(--border-strong);
   object-fit: cover;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
 }
 
 .avatar-fallback {
@@ -381,66 +545,105 @@ button:disabled {
 }
 
 .user-name {
-  max-width: 160px;
+  max-width: 150px;
   overflow: hidden;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   font-size: 14px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+/* Sign in sits inside the glass capsule, so it uses a fill (no glass on glass) */
+.nav-signin {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 999px;
+  background: var(--fill-strong);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.nav-signin:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
 .nav-toggle {
   display: none;
-  width: 40px;
-  height: 40px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin-left: auto;
+  border-radius: 50%;
+  --glass-fill: rgba(255, 255, 255, 0.04);
   font-size: 16px;
 }
 
+/* Mobile menu: a glass bubble that pops open from the menu button */
+.nav-menu {
+  position: absolute;
+  top: calc(var(--nav-height) + 10px);
+  right: 20px;
+  width: min(300px, calc(100vw - 40px));
+  padding: 10px;
+  border-radius: var(--radius-lg);
+  pointer-events: auto;
+  transform-origin: top right;
+  animation: materialize 0.4s var(--spring);
+}
+
+.nav-menu .nav-link {
+  display: block;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 16px;
+}
+
+.nav-menu .nav-link.active {
+  background: var(--fill-strong);
+}
+
+.nav-menu .nav-auth {
+  margin-top: 8px;
+  padding: 12px 6px 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 @media (max-width: 760px) {
+  .nav-tabs,
+  .nav-capsule > .nav-auth {
+    display: none;
+  }
+
   .nav-toggle {
     display: inline-flex;
-    align-items: center;
-    justify-content: center;
   }
+}
 
-  .nav-links {
-    position: absolute;
-    top: var(--nav-height);
-    left: 0;
-    right: 0;
-    display: none;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 4px;
-    padding: 12px 20px 20px;
-    border-bottom: 1px solid var(--border);
-    background: var(--bg);
-    box-shadow: var(--shadow);
-  }
-
-  .nav-links.is-open {
-    display: flex;
-  }
-
-  .nav-link {
-    padding: 12px 14px;
-  }
-
-  .nav-auth {
-    margin: 8px 0 0;
-    padding-top: 12px;
-    border-top: 1px solid var(--border);
-  }
+/* Scroll edge effect: content dissolves as it scrolls under the floating bar */
+.scroll-edge {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 40;
+  height: calc(var(--nav-height) + var(--nav-offset) + 28px);
+  background: linear-gradient(to bottom, rgba(7, 7, 12, 0.85), rgba(7, 7, 12, 0));
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  -webkit-mask-image: linear-gradient(to bottom, #000 45%, transparent);
+  mask-image: linear-gradient(to bottom, #000 45%, transparent);
+  pointer-events: none;
 }
 
 /* ===== Footer ===== */
 .footer {
-  border-top: 1px solid var(--border);
   padding: 28px 0;
-  color: var(--text-subtle);
+  color: var(--text-tertiary);
   font-size: 14px;
 }
 
@@ -450,6 +653,8 @@ button:disabled {
   align-items: center;
   justify-content: space-between;
   gap: 12px 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--material-border);
 }
 
 .footer-links {
@@ -459,7 +664,7 @@ button:disabled {
 }
 
 .footer a {
-  color: var(--text-muted);
+  color: var(--text-secondary);
   transition: color 0.2s;
 }
 
@@ -470,7 +675,7 @@ button:disabled {
 /* ===== Hero ===== */
 .hero {
   max-width: 760px;
-  margin: 24px auto 40px;
+  margin: 24px auto 44px;
   text-align: center;
 }
 
@@ -479,27 +684,26 @@ button:disabled {
   align-items: center;
   gap: 8px;
   padding: 6px 14px;
-  border: 1px solid var(--border-strong);
   border-radius: 999px;
-  background: var(--surface);
-  color: var(--text-muted);
+  background: var(--fill);
+  color: var(--text-secondary);
   font-size: 13px;
   font-weight: 500;
 }
 
 .hero h1 {
   margin-top: 20px;
-  font-size: clamp(36px, 6vw, 60px);
+  font-size: clamp(38px, 6.2vw, 64px);
   font-weight: 800;
-  line-height: 1.05;
-  letter-spacing: -0.035em;
+  line-height: 1.04;
+  letter-spacing: -0.04em;
 }
 
 .lead {
   max-width: 560px;
   margin: 18px auto 0;
-  color: var(--text-muted);
-  font-size: 18px;
+  color: var(--text-secondary);
+  font-size: 19px;
 }
 
 .hero-actions {
@@ -507,12 +711,12 @@ button:disabled {
   flex-wrap: wrap;
   justify-content: center;
   gap: 12px;
-  margin-top: 32px;
+  margin-top: 34px;
 }
 
 .hero-note {
-  margin-top: 14px;
-  color: var(--text-subtle);
+  margin-top: 16px;
+  color: var(--text-tertiary);
   font-size: 13px;
 }
 
@@ -530,32 +734,32 @@ button:disabled {
   margin-top: 20px;
 }
 
-/* ===== Sections & panels ===== */
+/* ===== Sections and content panels (standard material) ===== */
 .section {
-  margin-top: 56px;
+  margin-top: 64px;
 }
 
 .section-header {
-  margin-bottom: 20px;
+  margin-bottom: 22px;
   text-align: center;
 }
 
 .section-title {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 700;
   letter-spacing: -0.02em;
 }
 
 .section-subtitle {
   margin-top: 6px;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   font-size: 15px;
 }
 
 .panel {
-  border: 1px solid var(--border);
+  border: 1px solid var(--material-border);
   border-radius: var(--radius-lg);
-  background: var(--surface);
+  background: var(--material);
 }
 
 .mood-picker {
@@ -579,11 +783,11 @@ button:disabled {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: rgba(139, 92, 246, 0.14);
-  color: #b79bff;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--ambient) 22%, transparent);
+  color: color-mix(in srgb, var(--ambient) 55%, white);
   font-size: 18px;
 }
 
@@ -595,7 +799,7 @@ button:disabled {
 
 .step p {
   margin-top: 6px;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   font-size: 15px;
 }
 
@@ -609,10 +813,9 @@ button:disabled {
   position: relative;
   aspect-ratio: 4 / 3;
   overflow: hidden;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   background: #000;
-  box-shadow: var(--shadow);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 24px 60px rgba(0, 0, 0, 0.5);
 }
 
 /* Video and overlay share object-fit so the face box lines up at any camera aspect ratio */
@@ -630,27 +833,24 @@ button:disabled {
   pointer-events: none;
 }
 
+/* Clear glass over the live video */
 .scanner-status {
   position: absolute;
   left: 50%;
-  bottom: 16px;
+  bottom: 18px;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 16px;
-  border: 1px solid var(--border-strong);
+  padding: 9px 18px;
   border-radius: 999px;
-  background: rgba(9, 9, 15, 0.75);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   white-space: nowrap;
   transform: translateX(-50%);
 }
 
 .scanner-status i {
-  color: var(--mood, var(--text-muted));
+  color: var(--mood, var(--text-secondary));
 }
 
 .scanner-progress {
@@ -660,6 +860,7 @@ button:disabled {
   height: 4px;
   width: 100%;
   background: var(--mood);
+  box-shadow: 0 0 12px var(--mood);
   transform-origin: left;
   animation: fill-progress linear forwards;
 }
@@ -672,7 +873,7 @@ button:disabled {
   align-items: center;
   justify-content: center;
   gap: 12px;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   font-size: 14px;
 }
 
@@ -681,8 +882,8 @@ button:disabled {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-top: 14px;
-  color: var(--text-subtle);
+  margin-top: 16px;
+  color: var(--text-tertiary);
   font-size: 13px;
 }
 
@@ -696,22 +897,40 @@ button:disabled {
   }
 }
 
-/* ===== Result card ===== */
+/* ===== Result ===== */
+.result-stage {
+  position: relative;
+  max-width: 880px;
+  margin: 0 auto;
+}
+
+/* The cover's colours spill into the background around the card */
+.result-glow {
+  position: absolute;
+  inset: -10% 2%;
+  z-index: -1;
+  border-radius: 50%;
+  background-position: center;
+  background-size: cover;
+  filter: blur(80px) saturate(180%);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Content layer: a thin standard material, not glass */
 .result-card {
   position: relative;
   display: grid;
-  grid-template-columns: 260px 1fr;
+  grid-template-columns: 280px 1fr;
   gap: 32px;
-  max-width: 860px;
-  margin: 0 auto;
-  padding: 28px;
-  border: 1px solid color-mix(in srgb, var(--mood, var(--accent)) 30%, var(--border));
-  border-radius: var(--radius-lg);
-  background:
-    radial-gradient(500px 260px at 0% 0%, color-mix(in srgb, var(--mood, var(--accent)) 14%, transparent), transparent 70%),
-    var(--surface);
-  box-shadow: var(--shadow);
-  animation: rise-in 0.35s ease-out;
+  padding: 20px;
+  border: 1px solid var(--material-border);
+  border-radius: var(--radius-xl);
+  background: rgba(14, 14, 22, 0.55);
+  -webkit-backdrop-filter: blur(30px) saturate(140%);
+  backdrop-filter: blur(30px) saturate(140%);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+  animation: rise-in 0.5s var(--ease-out);
 }
 
 .result-close {
@@ -721,12 +940,13 @@ button:disabled {
   z-index: 1;
 }
 
+/* Concentric with the card: card radius minus its padding */
 .result-cover {
   width: 100%;
   aspect-ratio: 1;
-  border-radius: var(--radius);
+  border-radius: calc(var(--radius-xl) - 20px);
   object-fit: cover;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.5);
 }
 
 .cover-fallback {
@@ -735,9 +955,9 @@ button:disabled {
   justify-content: center;
   width: 100%;
   aspect-ratio: 1;
-  border-radius: var(--radius);
-  background: var(--surface-hover);
-  color: var(--text-subtle);
+  border-radius: calc(var(--radius-xl) - 20px);
+  background: var(--fill);
+  color: var(--text-tertiary);
   font-size: 40px;
 }
 
@@ -745,27 +965,28 @@ button:disabled {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  padding: 8px 8px 8px 0;
 }
 
 .result-headline {
   margin-top: 12px;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   font-size: 15px;
 }
 
 .result-title {
-  margin-top: 18px;
-  font-size: clamp(24px, 3.4vw, 34px);
+  margin-top: 16px;
+  font-size: clamp(26px, 3.4vw, 36px);
   font-weight: 800;
-  line-height: 1.15;
-  letter-spacing: -0.025em;
+  line-height: 1.12;
+  letter-spacing: -0.03em;
   overflow-wrap: anywhere;
 }
 
 .result-artist {
   margin-top: 6px;
-  color: var(--text-muted);
-  font-size: 17px;
+  color: var(--text-secondary);
+  font-size: 18px;
 }
 
 .result-actions {
@@ -784,29 +1005,21 @@ button:disabled {
 }
 
 .result-note {
-  margin: 16px auto 0;
-  color: var(--text-subtle);
+  margin: 18px auto 0;
+  color: var(--text-tertiary);
   font-size: 14px;
   text-align: center;
-}
-
-.link-button {
-  padding: 0;
-  border: none;
-  background: none;
-  color: #b79bff;
-  font-weight: 600;
-}
-
-.link-button:hover {
-  text-decoration: underline;
 }
 
 @media (max-width: 680px) {
   .result-card {
     grid-template-columns: 1fr;
     gap: 20px;
-    padding: 20px;
+    padding: 16px;
+  }
+
+  .result-body {
+    padding: 0 4px 4px;
   }
 
   /* Leave room on both sides for the close button on narrow phones */
@@ -814,20 +1027,21 @@ button:disabled {
   .result-card .cover-fallback {
     max-width: min(220px, calc(100% - 96px));
     margin: 0 auto;
+    border-radius: calc(var(--radius-xl) - 16px);
   }
 
   .result-close {
     top: 12px;
     right: 12px;
-    width: 32px;
-    height: 32px;
+    width: 34px;
+    height: 34px;
   }
 }
 
 @keyframes rise-in {
   from {
     opacity: 0;
-    transform: translateY(12px);
+    transform: translateY(14px) scale(0.98);
   }
 
   to {
@@ -842,10 +1056,9 @@ button:disabled {
   align-items: center;
   gap: 14px;
   margin-top: 22px;
-  padding: 12px 16px 12px 12px;
-  border: 1px solid var(--border);
+  padding: 10px 18px 10px 10px;
   border-radius: 999px;
-  background: rgba(0, 0, 0, 0.25);
+  background: rgba(0, 0, 0, 0.28);
 }
 
 .preview-play {
@@ -853,18 +1066,23 @@ button:disabled {
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   border: none;
   border-radius: 50%;
   background: var(--text);
-  color: var(--bg);
+  color: #0b0b12;
   font-size: 14px;
-  transition: transform 0.15s;
+  transition: transform 0.5s var(--spring);
 }
 
 .preview-play:hover {
   transform: scale(1.06);
+}
+
+.preview-play:active {
+  transform: scale(0.92);
+  transition-duration: 0.12s;
 }
 
 .preview-seek {
@@ -876,7 +1094,7 @@ button:disabled {
 
 .preview-time {
   flex-shrink: 0;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   font-size: 13px;
   font-variant-numeric: tabular-nums;
 }
@@ -892,21 +1110,21 @@ button:disabled {
 }
 
 .page-title {
-  font-size: clamp(28px, 4vw, 38px);
+  font-size: clamp(32px, 4.4vw, 44px);
   font-weight: 800;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.035em;
 }
 
 .page-subtitle {
   margin-top: 6px;
-  color: var(--text-muted);
+  color: var(--text-secondary);
 }
 
 .filters {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 24px;
+  margin-bottom: 26px;
 }
 
 .song-grid {
@@ -915,24 +1133,25 @@ button:disabled {
   gap: 20px;
 }
 
+/* Content layer card */
 .tile {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface);
-  transition: border-color 0.2s, transform 0.2s, background-color 0.2s;
+  border: 1px solid var(--material-border);
+  border-radius: var(--radius-lg);
+  background: var(--material);
+  transition: border-color 0.25s, background-color 0.25s, transform 0.5s var(--spring);
 }
 
 .tile:hover {
-  border-color: var(--border-strong);
-  background: var(--surface-hover);
-  transform: translateY(-2px);
+  background: var(--material-hover);
+  transform: translateY(-3px);
 }
 
 .tile.is-current {
-  border-color: color-mix(in srgb, var(--mood, var(--accent)) 55%, transparent);
+  border-color: color-mix(in srgb, var(--mood, var(--accent)) 60%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--mood, var(--accent)) 30%, transparent), 0 16px 40px color-mix(in srgb, var(--mood, var(--accent)) 18%, transparent);
 }
 
 .tile-cover {
@@ -943,7 +1162,7 @@ button:disabled {
   overflow: hidden;
   padding: 0;
   border: none;
-  background: var(--surface-hover);
+  background: var(--fill);
 }
 
 .tile-cover img,
@@ -952,13 +1171,14 @@ button:disabled {
   height: 100%;
   border-radius: 0;
   object-fit: cover;
-  transition: transform 0.35s;
+  transition: transform 0.6s var(--ease-out);
 }
 
 .tile-cover:hover img {
-  transform: scale(1.04);
+  transform: scale(1.05);
 }
 
+/* Clear glass play button floating over the cover art */
 .tile-play {
   position: absolute;
   right: 12px;
@@ -966,16 +1186,14 @@ button:disabled {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
+  width: 46px;
+  height: 46px;
   border-radius: 50%;
-  background: var(--text);
-  color: var(--bg);
+  color: #fff;
   font-size: 15px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
   opacity: 0;
-  transform: translateY(6px);
-  transition: opacity 0.2s, transform 0.2s;
+  transform: scale(0.85);
+  transition: opacity 0.3s var(--ease-out), transform 0.5s var(--spring);
 }
 
 .tile-cover:hover .tile-play,
@@ -985,25 +1203,71 @@ button:disabled {
   transform: none;
 }
 
-/* ===== Now playing bar ===== */
+.tile-body {
+  flex: 1;
+  padding: 14px 14px 6px;
+}
+
+.tile-title {
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tile-artist {
+  margin-top: 2px;
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tile-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.tile-time {
+  color: var(--text-tertiary);
+  font-size: 12px;
+}
+
+.tile-actions {
+  display: flex;
+  gap: 8px;
+  padding: 8px 14px 14px;
+}
+
+.tile-actions .icon-btn-danger {
+  margin-left: auto;
+}
+
+/* ===== Now playing (floating glass capsule) ===== */
 .now-playing {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: 0;
+  bottom: 16px;
   z-index: 60;
-  border-top: 1px solid color-mix(in srgb, var(--mood, var(--accent)) 35%, var(--border));
-  background: rgba(13, 13, 20, 0.92);
-  backdrop-filter: saturate(160%) blur(16px);
-  -webkit-backdrop-filter: saturate(160%) blur(16px);
-  animation: rise-in 0.25s ease-out;
+  pointer-events: none;
 }
 
 .now-playing-inner {
   display: flex;
   align-items: center;
-  gap: 20px;
-  height: 76px;
+  gap: 18px;
+  height: 72px;
+  padding: 0 12px;
+  border-radius: 999px;
+  pointer-events: auto;
+  animation: materialize 0.45s var(--spring);
 }
 
 .now-playing-song {
@@ -1014,13 +1278,15 @@ button:disabled {
   min-width: 0;
 }
 
+/* Concentric with the capsule: a circle */
 .now-playing-cover {
   flex-shrink: 0;
   width: 48px;
   height: 48px;
-  border-radius: 8px;
+  border-radius: 50%;
   object-fit: cover;
   font-size: 18px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12);
 }
 
 .now-playing-text {
@@ -1040,7 +1306,7 @@ button:disabled {
 }
 
 .now-playing-artist {
-  color: var(--text-muted);
+  color: var(--text-secondary);
   font-size: 13px;
 }
 
@@ -1052,19 +1318,20 @@ button:disabled {
   min-width: 0;
 }
 
-/* Leave room for the fixed bar */
+/* Leave room for the floating player */
 .has-player .main {
-  padding-bottom: 140px;
+  padding-bottom: 150px;
 }
 
 .has-player .toaster {
-  bottom: 96px;
+  bottom: 104px;
 }
 
 @media (max-width: 640px) {
   .now-playing-inner {
     gap: 12px;
-    height: 68px;
+    height: 64px;
+    padding: 0 8px;
   }
 
   .now-playing-song {
@@ -1082,52 +1349,6 @@ button:disabled {
   }
 }
 
-.tile-body {
-  flex: 1;
-  padding: 14px 14px 6px;
-}
-
-.tile-title {
-  overflow: hidden;
-  font-size: 15px;
-  font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.tile-artist {
-  margin-top: 2px;
-  overflow: hidden;
-  color: var(--text-muted);
-  font-size: 14px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.tile-meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-  margin-top: 12px;
-}
-
-.tile-time {
-  color: var(--text-subtle);
-  font-size: 12px;
-}
-
-.tile-actions {
-  display: flex;
-  gap: 8px;
-  padding: 8px 14px 14px;
-}
-
-.tile-actions .icon-btn-danger {
-  margin-left: auto;
-}
-
 /* ===== Empty states ===== */
 .empty-state {
   max-width: 460px;
@@ -1143,20 +1364,20 @@ button:disabled {
   width: 64px;
   height: 64px;
   border-radius: 20px;
-  background: rgba(139, 92, 246, 0.14);
-  color: #b79bff;
+  background: color-mix(in srgb, var(--ambient) 22%, transparent);
+  color: color-mix(in srgb, var(--ambient) 55%, white);
   font-size: 26px;
 }
 
 .empty-state h2 {
   margin-top: 20px;
-  font-size: 20px;
+  font-size: 21px;
   font-weight: 700;
 }
 
 .empty-state p {
   margin-top: 8px;
-  color: var(--text-muted);
+  color: var(--text-secondary);
 }
 
 .empty-state .btn {
@@ -1182,7 +1403,7 @@ button:disabled {
 
 .skeleton {
   border-radius: var(--radius-sm);
-  background: linear-gradient(90deg, var(--surface) 0%, var(--surface-hover) 50%, var(--surface) 100%);
+  background: linear-gradient(90deg, var(--material) 0%, var(--material-hover) 50%, var(--material) 100%);
   background-size: 200% 100%;
   animation: shimmer 1.4s ease-in-out infinite;
 }
@@ -1190,7 +1411,7 @@ button:disabled {
 .skeleton-cover {
   width: 100%;
   aspect-ratio: 1;
-  border-radius: var(--radius);
+  border-radius: calc(var(--radius-xl) - 20px);
 }
 
 .skeleton-line {
@@ -1204,7 +1425,7 @@ button:disabled {
 }
 
 .tile-skeleton {
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   aspect-ratio: 0.78;
 }
 
@@ -1224,7 +1445,7 @@ button:disabled {
   }
 }
 
-/* ===== Toasts ===== */
+/* ===== Toasts (glass) ===== */
 .toaster {
   position: fixed;
   right: 20px;
@@ -1242,13 +1463,11 @@ button:disabled {
   gap: 10px;
   min-width: 240px;
   max-width: 380px;
-  padding: 12px 16px;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-sm);
-  background: var(--surface-solid);
-  box-shadow: var(--shadow);
+  padding: 13px 18px;
+  border-radius: 999px;
   font-size: 14px;
-  animation: rise-in 0.25s ease-out;
+  font-weight: 500;
+  animation: materialize 0.4s var(--spring);
 }
 
 .toast i {
@@ -1264,10 +1483,75 @@ button:disabled {
 }
 
 .toast-info i {
-  color: #b79bff;
+  color: #c4b5fd;
 }
 
-/* The scanner progress bar shows real timing, so it keeps animating */
+/* ===== Accessibility settings ===== */
+
+/*
+ * These target the glass elements directly (not just :root) because the
+ * size and variant classes (.glass-large, .glass-clear) set their own values.
+ */
+
+/* Reduce transparency: frostier, nearly opaque glass */
+@media (prefers-reduced-transparency: reduce) {
+  :is(.glass, .btn-secondary, .mood-option, .nav-toggle, .glass-large, .glass-clear) {
+    --glass-fill: rgba(30, 30, 42, 0.96);
+    --glass-blur: 0px;
+  }
+
+  .mood-option.is-active {
+    --glass-fill: color-mix(in srgb, var(--mood) 35%, #1e1e2a);
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #6d28d9, #4338ca);
+  }
+
+  .result-card {
+    background: #12121b;
+  }
+
+  .scroll-edge {
+    background: var(--bg);
+  }
+
+  .result-glow {
+    display: none;
+  }
+}
+
+/* Increase contrast: solid surfaces with a contrasting border */
+@media (prefers-contrast: more) {
+  :root {
+    --text-secondary: #fff;
+    --text-tertiary: rgba(255, 255, 255, 0.85);
+    --material-border: rgba(255, 255, 255, 0.6);
+  }
+
+  :is(.glass, .btn-secondary, .mood-option, .nav-toggle, .glass-large, .glass-clear) {
+    --glass-fill: #000;
+    --glass-blur: 0px;
+  }
+
+  .mood-option.is-active {
+    --glass-fill: color-mix(in srgb, var(--mood) 40%, #000);
+  }
+
+  .glass,
+  .btn-primary,
+  .btn-secondary,
+  .mood-option,
+  .nav-toggle {
+    box-shadow: inset 0 0 0 1.5px #fff;
+  }
+
+  .btn-primary {
+    background: #5b21b6;
+  }
+}
+
+/* Reduce motion: no elastic or materializing effects (the scanner bar shows real timing, so it keeps animating) */
 @media (prefers-reduced-motion: reduce) {
   *:not(.scanner-progress),
   *::before,
