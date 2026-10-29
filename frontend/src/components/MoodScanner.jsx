@@ -3,6 +3,7 @@ import Webcam from 'react-webcam';
 import { detectFace, drawFaceBox } from '../services/faceApiService';
 import { createEmotionTracker } from '../utils/emotionTracker';
 import { MOODS } from '../moods';
+import { setAmbientMood } from '../utils/glassEffects';
 import Spinner from './Spinner';
 
 const DETECTION_INTERVAL_MS = 100;
@@ -29,6 +30,11 @@ const MoodScanner = ({ onDetected, onCameraError, onCancel }) => {
         onDetectedRef.current = onDetected;
     }, [onDetected]);
 
+    // While scanning, the background follows the expression being read
+    useEffect(() => {
+        setAmbientMood(status.emotion);
+    }, [status.emotion]);
+
     useEffect(() => {
         if (!cameraReady) return undefined;
         const hintTimer = setTimeout(() => setShowHint(true), HINT_AFTER_MS);
@@ -47,7 +53,7 @@ const MoodScanner = ({ onDetected, onCameraError, onCancel }) => {
             const video = webcamRef.current?.video;
             const canvas = canvasRef.current;
 
-            if (video?.readyState === 4 && canvas) {
+            if (video?.readyState === 4 && video.videoWidth > 0 && canvas) {
                 try {
                     const result = await detectFace(video);
                     if (cancelled) return;
@@ -68,6 +74,9 @@ const MoodScanner = ({ onDetected, onCameraError, onCancel }) => {
                         setStatus(lastStatus);
                     }
                 } catch (error) {
+                    // A detection still running when the scanner closes fails
+                    // on the stopped video; that is expected, not an error
+                    if (cancelled) return;
                     console.error('Emotion detection failed:', error);
                 }
             }
@@ -116,7 +125,7 @@ const MoodScanner = ({ onDetected, onCameraError, onCancel }) => {
                         Starting camera…
                     </div>
                 ) : (
-                    <div className="scanner-status" aria-live="polite">{statusContent}</div>
+                    <div className="scanner-status glass glass-clear" aria-live="polite">{statusContent}</div>
                 )}
 
                 {/* Restarts whenever a new emotion takes the lead */}

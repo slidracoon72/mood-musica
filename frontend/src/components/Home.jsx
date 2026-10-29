@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
-import { loadModels } from '../services/faceApiService';
+import { areModelsLoaded, loadModels } from '../services/faceApiService';
 import { fetchSongRecommendation, saveSuggestedSong } from '../services/songService';
 import { useAuthUser } from '../services/authService';
 import { toast } from '../services/toastService';
+import { setAmbientMood } from '../utils/glassEffects';
 import MoodScanner from './MoodScanner';
 import MoodPicker from './MoodPicker';
 import SongResult from './SongResult';
@@ -11,17 +12,17 @@ import Spinner from './Spinner';
 const STEPS = [
     {
         icon: 'fa-camera',
-        title: 'Scan your expression',
+        title: 'Scan Your Expression',
         text: 'Turn on your camera and hold an expression for two seconds. No camera? Just pick a mood.',
     },
     {
         icon: 'fa-brain',
-        title: 'We read your mood',
+        title: 'We Read Your Mood',
         text: 'An on-device model recognizes seven emotions. Your video never leaves your browser.',
     },
     {
         icon: 'fa-headphones',
-        title: 'Hear a matching song',
+        title: 'Hear a Matching Song',
         text: 'Get a song from curated Deezer playlists with a 30-second preview. Sign in to keep a history.',
     },
 ];
@@ -41,17 +42,29 @@ const ResultSkeleton = () => (
 // Keeps the last recommendation when navigating away and back (until reload)
 let lastSong = null;
 
-const Home = () => {
+// `startOver` shows the initial screen instead of restoring the last song
+const Home = ({ startOver = false }) => {
     const { user } = useAuthUser();
-    const [modelsState, setModelsState] = useState('loading'); // loading | ready | error
+    const [modelsState, setModelsState] = useState(() => (areModelsLoaded() ? 'ready' : 'loading')); // loading | ready | error
     const [scanning, setScanning] = useState(false);
     const [loadingSong, setLoadingSong] = useState(false);
-    const [song, setSongState] = useState(lastSong);
+    const [song, setSongState] = useState(() => (startOver ? null : lastSong));
 
     const setSong = useCallback((nextSong) => {
         lastSong = nextSong;
         setSongState(nextSong);
     }, []);
+
+    useEffect(() => {
+        if (startOver) lastSong = null;
+    }, [startOver]);
+
+    // The background takes on the colour of the recommended song's mood
+    useEffect(() => {
+        setAmbientMood(song?.emotion ?? null);
+    }, [song]);
+
+    useEffect(() => () => setAmbientMood(null), []);
 
     useEffect(() => {
         loadModels()
@@ -82,16 +95,27 @@ const Home = () => {
         }
     }, [user, setSong]);
 
-    const handleCameraError = useCallback(() => {
+    // Leaving the scanner without a result drops the live mood tint
+    const stopScanning = useCallback(() => {
         setScanning(false);
-        toast('Could not access your camera. Allow camera access, or pick a mood instead.', 'error');
+        setAmbientMood(null);
     }, []);
+
+    const handleCameraError = useCallback(() => {
+        stopScanning();
+        toast('Could not access your camera. Allow camera access, or pick a mood instead.', 'error');
+    }, [stopScanning]);
 
     const compactHero = scanning || loadingSong || Boolean(song);
 
     const startScan = () => {
         setSong(null);
         setScanning(true);
+    };
+
+    const handleStartOver = () => {
+        setSong(null);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     return (
@@ -138,7 +162,7 @@ const Home = () => {
                 <MoodScanner
                     onDetected={recommendSong}
                     onCameraError={handleCameraError}
-                    onCancel={() => setScanning(false)}
+                    onCancel={stopScanning}
                 />
             )}
 
@@ -150,13 +174,14 @@ const Home = () => {
                     song={song}
                     user={user}
                     onAnotherSong={() => recommendSong(song.emotion)}
+                    onClose={handleStartOver}
                 />
             )}
 
             {!scanning && (
                 <section className="section" aria-labelledby="mood-picker-title">
                     <div className="section-header">
-                        <h2 id="mood-picker-title" className="section-title">{song ? 'Try another mood' : 'Or pick a mood'}</h2>
+                        <h2 id="mood-picker-title" className="section-title">{song ? 'Try Another Mood' : 'Or Pick a Mood'}</h2>
                         <p className="section-subtitle">No camera needed. Choose how you feel and we will find a song.</p>
                     </div>
                     <MoodPicker activeMood={song?.emotion} onPick={recommendSong} disabled={loadingSong} />
@@ -166,7 +191,7 @@ const Home = () => {
             {!scanning && !song && !loadingSong && (
                 <section className="section" aria-labelledby="how-it-works-title">
                     <div className="section-header">
-                        <h2 id="how-it-works-title" className="section-title">How it works</h2>
+                        <h2 id="how-it-works-title" className="section-title">How It Works</h2>
                     </div>
                     <div className="steps">
                         {STEPS.map(step => (

@@ -2,8 +2,9 @@ import { useId } from 'react';
 
 // Mood Musica mark: a smiling face wearing headphones (same artwork as public/logo.svg)
 const Logo = ({ size = 34 }) => {
-    // Unique gradient id, so several logos on a page don't clash
+    // Unique gradient ids, so several logos on a page don't clash
     const gradientId = useId();
+    const highlightId = useId();
 
     return (
         <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true" className="logo">
@@ -13,8 +14,15 @@ const Logo = ({ size = 34 }) => {
                     <stop offset="0.55" stopColor="#ec4899" />
                     <stop offset="1" stopColor="#f59e0b" />
                 </linearGradient>
+                {/* Liquid Glass style light from above */}
+                <linearGradient id={highlightId} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stopColor="#fff" stopOpacity="0.42" />
+                    <stop offset="0.5" stopColor="#fff" stopOpacity="0" />
+                </linearGradient>
             </defs>
             <rect width="32" height="32" rx="9" fill={`url(#${gradientId})`} />
+            <rect width="32" height="32" rx="9" fill={`url(#${highlightId})`} />
+            <rect x="0.5" y="0.5" width="31" height="31" rx="8.5" fill="none" stroke="#fff" strokeOpacity="0.3" />
             <g fill="#fff" transform="translate(0 1.5)">
                 <path d="M7.5 16 V15 a8.5 8.5 0 0 1 17 0 V16" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" />
                 <rect x="4" y="15" width="4.5" height="8.5" rx="2.25" />
